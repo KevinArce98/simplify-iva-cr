@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import CustomSelect from '../components/custom-select';
 
 export default function PeriodSelector() {
   const router = useRouter();
@@ -29,7 +30,10 @@ export default function PeriodSelector() {
     { value: '12', label: 'Diciembre' },
   ];
 
-  const años = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
+  const años = Array.from({ length: 5 }, (_, i) => ({
+    value: String(now.getFullYear() - i),
+    label: String(now.getFullYear() - i),
+  }));
 
   return (
     <div className="flex items-center gap-3">
@@ -37,36 +41,26 @@ export default function PeriodSelector() {
         <label htmlFor="mes" className="text-sm font-medium text-gray-700">
           Mes:
         </label>
-        <select
+        <CustomSelect
           id="mes"
           value={currentMes}
-          onChange={(e) => handlePeriodChange(e.target.value, currentAño)}
-          className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
-        >
-          {meses.map((mes) => (
-            <option key={mes.value} value={mes.value}>
-              {mes.label}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => handlePeriodChange(value, currentAño)}
+          options={meses}
+          className="min-w-35"
+        />
       </div>
 
       <div className="flex items-center gap-2">
         <label htmlFor="año" className="text-sm font-medium text-gray-700">
           Año:
         </label>
-        <select
+        <CustomSelect
           id="año"
           value={currentAño}
-          onChange={(e) => handlePeriodChange(currentMes, e.target.value)}
-          className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
-        >
-          {años.map((año) => (
-            <option key={año} value={año}>
-              {año}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => handlePeriodChange(currentMes, value)}
+          options={años}
+          className="min-w-25"
+        />
       </div>
     </div>
   );

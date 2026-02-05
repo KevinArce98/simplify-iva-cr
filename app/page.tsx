@@ -5,18 +5,23 @@ import { Sidebar } from './components/sidebar';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { redirect } from 'next/navigation';
+import HomePeriodSelector from './components/home-period-selector';
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: { mes?: string; año?: string };
+}) {
   const session = await getServerSession(authOptions);
   
   if (!session) {
     redirect('/login');
   }
 
-  // Default to current month
+  // Default to current month or use search params
   const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
+  const currentMonth = searchParams.mes ? parseInt(searchParams.mes) : now.getMonth() + 1;
+  const currentYear = searchParams.año ? parseInt(searchParams.año) : now.getFullYear();
 
   const summary = await getTaxSummary(currentMonth, currentYear);
 
@@ -48,29 +53,7 @@ export default async function HomePage() {
                 Resumen de obligaciones tributarias para profesionales independientes
               </p>
             </div>
-            <div className="flex items-end gap-3 bg-white p-1.5 rounded-xl shadow-sm border border-[#d0d7e7]">
-              <div className="relative">
-                <select className="appearance-none bg-transparent pl-4 pr-8 py-2 text-sm font-medium text-[#0e121b] focus:outline-none cursor-pointer">
-                  <option>{getMonthName(currentMonth)}</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#0e121b]">
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                    expand_more
-                  </span>
-                </div>
-              </div>
-              <div className="w-px h-6 bg-[#d0d7e7]"></div>
-              <div className="relative">
-                <select className="appearance-none bg-transparent pl-4 pr-8 py-2 text-sm font-medium text-[#0e121b] focus:outline-none cursor-pointer">
-                  <option>{currentYear}</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#0e121b]">
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                    expand_more
-                  </span>
-                </div>
-              </div>
-            </div>
+            <HomePeriodSelector currentMonth={currentMonth} currentYear={currentYear} />
           </div>
 
           {/* Action Cards */}
@@ -78,18 +61,18 @@ export default async function HomePage() {
             {/* Upload Expenses */}
             <Link
               href="/upload?type=gasto"
-              className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-[var(--primary)]/50 transition-all duration-300"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-(--primary)/50 transition-all duration-300"
             >
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <span
-                  className="material-symbols-outlined text-[var(--primary)]"
+                  className="material-symbols-outlined text-(--primary)"
                   style={{ fontSize: 120 }}
                 >
                   receipt_long
                 </span>
               </div>
               <div className="flex flex-col gap-4 z-10">
-                <div className="bg-[var(--primary)]/10 w-12 h-12 rounded-lg flex items-center justify-center text-[var(--primary)] mb-2">
+                <div className="bg-(--primary)/10 w-12 h-12 rounded-lg flex items-center justify-center text-(--primary) mb-2">
                   <span className="material-symbols-outlined">upload_file</span>
                 </div>
                 <div>
@@ -102,7 +85,7 @@ export default async function HomePage() {
                 </div>
               </div>
               <div className="mt-6 z-10">
-                <div className="flex items-center justify-center w-full bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-medium py-2.5 px-4 rounded-lg transition-colors gap-2">
+                <div className="flex items-center justify-center w-full bg-(--primary) hover:bg-(--primary-dark) text-white font-medium py-2.5 px-4 rounded-lg transition-colors gap-2">
                   <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                     add
                   </span>
@@ -114,7 +97,7 @@ export default async function HomePage() {
             {/* Upload Invoices */}
             <Link
               href="/upload?type=emitida"
-              className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-[var(--primary)]/50 transition-all duration-300"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-(--primary)/50 transition-all duration-300"
             >
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <span
@@ -212,7 +195,7 @@ export default async function HomePage() {
               </div>
 
               {/* Total */}
-              <div className="bg-[var(--primary)] p-5 rounded-xl border border-[var(--primary)] shadow-sm flex flex-col gap-2 relative overflow-hidden">
+              <div className="bg-(--primary) p-5 rounded-xl border border-(--primary) shadow-sm flex flex-col gap-2 relative overflow-hidden">
                 <div className="absolute right-0 top-0 p-4 opacity-10">
                   <span
                     className="material-symbols-outlined text-white"

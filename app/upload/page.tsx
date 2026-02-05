@@ -11,6 +11,7 @@ export default function UploadPage() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDraggingGasto, setIsDraggingGasto] = useState(false);
   const [isDraggingEmitida, setIsDraggingEmitida] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const gastoInputRef = useRef<HTMLInputElement>(null);
   const emitidaInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function UploadPage() {
     }));
 
     setFiles((prev) => [...prev, ...newFiles]);
+    setIsProcessing(true);
 
     // Process each file
     for (let i = 0; i < xmlFiles.length; i++) {
@@ -67,6 +69,8 @@ export default function UploadPage() {
         );
       }
     }
+
+    setIsProcessing(false);
   };
 
   const handleDragOver = (e: React.DragEvent, tipo: InvoiceType) => {
@@ -130,10 +134,26 @@ export default function UploadPage() {
 
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col">
+      {/* Full Screen Loader */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl">
+            <div className="relative size-16">
+              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+              <div className="absolute inset-0 animate-spin rounded-full border-4 border-(--primary) border-t-transparent"></div>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <h3 className="text-lg font-bold text-[#0e121b]">Procesando archivos...</h3>
+              <p className="text-sm text-[#4d6599]">Por favor espera mientras validamos tus facturas</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation */}
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#d0d7e7] px-6 lg:px-10 py-3 bg-white sticky top-0 z-50">
         <div className="flex items-center gap-4">
-          <div className="size-8 text-[var(--primary)] flex items-center justify-center rounded-lg bg-[var(--primary)]/10">
+          <div className="size-8 text-(--primary) flex items-center justify-center rounded-lg bg-(--primary)/10">
             <span className="material-symbols-outlined text-2xl">calculate</span>
           </div>
           <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">
@@ -143,19 +163,19 @@ export default function UploadPage() {
         <div className="hidden md:flex flex-1 justify-end gap-8">
           <div className="flex items-center gap-6">
             <Link
-              className="text-sm font-medium leading-normal text-[#4d6599] hover:text-[var(--primary)] transition-colors"
+              className="text-sm font-medium leading-normal text-[#4d6599] hover:text-(--primary) transition-colors"
               href="/"
             >
               Dashboard
             </Link>
             <Link
-              className="text-sm font-medium leading-normal text-[var(--primary)]"
+              className="text-sm font-medium leading-normal text-(--primary)"
               href="/upload"
             >
               Carga de XML
             </Link>
             <Link
-              className="text-sm font-medium leading-normal text-[#4d6599] hover:text-[var(--primary)] transition-colors"
+              className="text-sm font-medium leading-normal text-[#4d6599] hover:text-(--primary) transition-colors"
               href="/reports"
             >
               Declaraciones
@@ -186,15 +206,15 @@ export default function UploadPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Zone: Gastos */}
             <div
-              className={`group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed bg-white p-8 md:p-12 hover:border-[var(--primary)] hover:bg-[var(--primary)]/5 transition-all cursor-pointer ${
-                isDraggingGasto ? 'border-[var(--primary)] bg-[var(--primary)]/5' : 'border-[#d0d7e7]'
+              className={`group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed bg-white p-8 md:p-12 hover:border-(--primary) hover:bg-(--primary)/5 transition-all cursor-pointer ${
+                isDraggingGasto ? 'border-(--primary) bg-(--primary)/5' : 'border-[#d0d7e7]'
               }`}
               onDragOver={(e) => handleDragOver(e, 'GASTO')}
               onDragLeave={() => handleDragLeave('GASTO')}
               onDrop={(e) => handleDrop(e, 'GASTO')}
               onClick={() => gastoInputRef.current?.click()}
             >
-              <div className="size-16 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] group-hover:scale-110 transition-transform duration-300">
+              <div className="size-16 rounded-full bg-(--primary)/10 flex items-center justify-center text-(--primary) group-hover:scale-110 transition-transform duration-300">
                 <span className="material-symbols-outlined text-3xl">
                   shopping_cart_checkout
                 </span>
@@ -219,8 +239,8 @@ export default function UploadPage() {
 
             {/* Zone: Emitidas */}
             <div
-              className={`group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed bg-white p-8 md:p-12 hover:border-[var(--primary)] hover:bg-[var(--primary)]/5 transition-all cursor-pointer ${
-                isDraggingEmitida ? 'border-[var(--primary)] bg-[var(--primary)]/5' : 'border-[#d0d7e7]'
+              className={`group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed bg-white p-8 md:p-12 hover:border-(--primary) hover:bg-(--primary)/5 transition-all cursor-pointer ${
+                isDraggingEmitida ? 'border-(--primary) bg-(--primary)/5' : 'border-[#d0d7e7]'
               }`}
               onDragOver={(e) => handleDragOver(e, 'EMITIDA')}
               onDragLeave={() => handleDragLeave('EMITIDA')}
@@ -258,7 +278,7 @@ export default function UploadPage() {
                 </h3>
                 <button
                   onClick={clearAll}
-                  className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-dark)]"
+                  className="text-sm font-medium text-(--primary) hover:text-(--primary-dark)"
                 >
                   Limpiar Todo
                 </button>
@@ -312,7 +332,7 @@ export default function UploadPage() {
                             <span
                               className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
                                 file.tipo === 'GASTO'
-                                  ? 'bg-[var(--primary)]/10 text-[var(--primary)] ring-[var(--primary)]/20'
+                                  ? 'bg-(--primary)/10 text-(--primary) ring-(--primary)/20'
                                   : 'bg-green-50 text-green-700 ring-green-600/20'
                               }`}
                             >
@@ -345,10 +365,10 @@ export default function UploadPage() {
                               )}
                               {file.status === 'PROCESSING' && (
                                 <>
-                                  <span className="material-symbols-outlined text-[var(--primary)] text-[20px] animate-spin">
+                                  <span className="material-symbols-outlined text-(--primary) text-[20px] animate-spin">
                                     progress_activity
                                   </span>
-                                  <span className="text-sm font-medium text-[var(--primary)]">
+                                  <span className="text-sm font-medium text-(--primary)">
                                     Validando...
                                   </span>
                                 </>
@@ -391,7 +411,7 @@ export default function UploadPage() {
               </div>
               {successCount > 0 && (
                 <div className="flex items-center gap-2 px-2 text-sm">
-                  <span className="material-symbols-outlined text-[var(--primary)] text-[18px]">
+                  <span className="material-symbols-outlined text-(--primary) text-[18px]">
                     info
                   </span>
                   <span className="text-[#4d6599]">
@@ -403,14 +423,14 @@ export default function UploadPage() {
               <div className="flex items-center justify-between gap-3 px-2">
                 <Link
                   href="/"
-                  className="text-sm font-medium text-[#4d6599] hover:text-[var(--primary)]"
+                  className="text-sm font-medium text-[#4d6599] hover:text-(--primary)"
                 >
                   Cancelar
                 </Link>
                 {successCount > 0 && (
                   <button
                     onClick={handleVerResultados}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white text-sm font-bold shadow-sm transition-all px-6 py-2.5"
+                    className="flex items-center justify-center gap-2 rounded-lg bg-(--primary) hover:bg-(--primary-dark) text-white text-sm font-bold shadow-sm transition-all px-6 py-2.5"
                   >
                     <span className="material-symbols-outlined text-[18px]">bolt</span>
                     <span>Ver Resultados</span>
