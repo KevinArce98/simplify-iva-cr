@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  invoices      Invoice[]
+}
+
+model Invoice {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Invoice metadata
+  fileName          String
+  tipo              String   // 'GASTO' o 'EMITIDA'
+  
+  // Invoice details
+  numeroConsecutivo String?
+  clave             String?  @unique
+  fechaEmision      DateTime?
+  emisorNombre      String?
+  emisorIdentificacion String?
+  receptorNombre    String?
+  receptorIdentificacion String?
+  
+  // Amounts - Base amounts (subtotals) for Hacienda declaration
+  subtotalGravado   Float?   @default(0)  // Base imponible para IVA (suma de bases con tarifa > 0)
+  subtotalExento    Float?   @default(0)  // Total sin IVA (tarifa 0%)
+  tarifaIVA         Float?   @default(13) // Tarifa de IVA predominante de la factura
+  
+  // Original detailed amounts from XML
+  totalServGravados Float?   @default(0)
+  totalServExentos  Float?   @default(0)
+  totalServExonerado Float?  @default(0)
+  totalMercanciasGravadas Float? @default(0)
+  totalMercanciasExentas Float? @default(0)
+  totalMercanciasExonerada Float? @default(0)
+  totalGravado      Float?   @default(0)
+  totalExento       Float?   @default(0)
+  totalExonerado    Float?   @default(0)
+  totalVenta        Float?   @default(0)
+  totalDescuentos   Float?   @default(0)
+  totalVentaNeta    Float?   @default(0)
+  totalImpuesto     Float?   @default(0)
+  totalIVADevuelto  Float?   @default(0)
+  totalOtrosCargos  Float?   @default(0)
+  totalComprobante  Float?   @default(0)
+  
+  // Exchange rate (for foreign currency)
+  tipoMoneda        String?
+  tipoCambio        Float?   @default(1)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([tipo])
+  @@index([fechaEmision])
+}

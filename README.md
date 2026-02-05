@@ -1,36 +1,201 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IVA Calculadora - Costa Rica
+
+Production-ready web application for calculating monthly IVA (VAT) for independent professionals in Costa Rica.
+
+## Features
+
+- **XML Upload**: Batch upload of Costa Rican electronic invoice XMLs (FacturaElectronica v4.4)
+- **Two Upload Types**:
+  - Gastos (Expenses) - IVA Crédito
+  - Facturas Emitidas (Issued Invoices) - IVA Débito
+- **Automatic Processing**:
+  - Server-side XML parsing
+  - Exchange rate fetching from BCCR (Banco Central de Costa Rica)
+  - USD to CRC conversion
+  - IVA calculations
+- **Reports Dashboard**:
+  - Monthly tax summary
+  - Detailed transaction table
+  - Export capabilities
+- **Drag & Drop**: Modern file upload with drag-and-drop support
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **XML Parsing**: fast-xml-parser
+- **Runtime**: Node.js
+
+## Project Structure
+
+```
+/app
+  /actions.ts           # Server actions for invoice processing
+  /page.tsx             # Dashboard homepage
+  /layout.tsx           # Root layout with fonts
+  /globals.css          # Global styles and design tokens
+  /upload/
+    /page.tsx           # XML upload page with drag & drop
+  /reports/
+    /page.tsx           # Results and reports page
+/lib
+  /types.ts             # TypeScript type definitions
+  /xml-parser.ts        # XML parsing utilities
+  /exchange-rate.ts     # BCCR exchange rate service
+  /store.ts             # In-memory invoice store
+  /utils.ts             # Formatting utilities
+```
 
 ## Getting Started
 
-First, run the development server:
+1. **Configure BCCR API credentials**:
+   
+   Create a `.env` file in the root directory:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Then update with your BCCR credentials:
+   ```env
+   BCCR_EMAIL=tu-email@example.com
+   BCCR_TOKEN=tu-token-aqui
+   BCCR_NAME=Tu Nombre
+   ```
+   
+   > **Obtén tus credenciales BCCR**: Regístrate en [https://gee.bccr.fi.cr/Indicadores/Suscripciones/](https://gee.bccr.fi.cr/Indicadores/Suscripciones/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+2. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
+
+3. **Run development server**:
+   ```bash
+   pnpm dev
+   ```
+
+4. **Open browser**:
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## Usage
+
+### 1. Upload XML Files
+
+- Go to "Carga de XML" page
+- Drag and drop XML files or click to browse
+- Choose upload zone:
+  - **Gastos**: For expense invoices (IVA Crédito)
+  - **Emitidas**: For issued invoices (IVA Débito)
+
+### 2. View Results
+
+- Files are processed automatically
+- Navigate to "Declaraciones" to see:
+  - IVA Débito (sales/collected VAT)
+  - IVA Crédito (expenses/paid VAT)
+  - IVA a Pagar (total to pay)
+  - Detailed transaction table
+
+### 3. Sample Files
+
+Two sample XML files are included:
+- `sample_factura_emitida.xml` - Issued invoice in USD
+- `sample_factura_gasto.xml` - Expense invoice in CRC
+
+## Data Model
+
+### Invoice Type
+```typescript
+type Invoice = {
+  id: string;
+  tipo: 'GASTO' | 'EMITIDA';
+  fecha: string;
+  moneda: 'CRC' | 'USD';
+  ivaOriginal: number;
+  totalOriginal: number;
+  tipoCambio: number;
+  ivaCRC: number;
+  totalCRC: number;
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tax Calculation Logic
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Parse XML**: Extract invoice data (date, currency, IVA amount)
+2. **Exchange Rate**: Fetch BCCR rate if currency is USD
+3. **Convert to CRC**: Multiply IVA by exchange rate
+4. **Calculate**:
+   - IVA Débito = Sum of IVA from EMITIDA invoices
+   - IVA Crédito = Sum of IVA from GASTO invoices
+   - IVA a Pagar = IVA Débito - IVA Crédito
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Important Notes
 
-## Learn More
+### Exchange Rates
 
-To learn more about Next.js, take a look at the following resources:
+The application fetches **real-time exchange rates** from BCCR Web Service:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Endpoint**: `https://gee.bccr.fi.cr/Indicadores/Suscripciones/WS/wsindicadoreseconomicos.asmx/ObtenerIndicadoresEconomicos`
+- **Indicator**: 318 (Tipo de cambio de venta USD)
+- **Caching**: One API call per date (in-memory cache)
+- **Fallback**: If API fails, uses approximate historical rates
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Configuration required**:
+1. Register at [BCCR Suscripciones](https://gee.bccr.fi.cr/Indicadores/Suscripciones/)
+2. Add credentials to `.env` file
+3. The app will automatically use the real API
 
-## Deploy on Vercel
+### Data Storage
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Currently uses **in-memory storage**. Data is lost on server restart. For production:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Integrate a database (PostgreSQL, MySQL, etc.)
+2. Update the store in `lib/store.ts`
+3. Implement proper data persistence
+
+### Supported XML Types
+
+- **FacturaElectronica** (v4.4) - Standard electronic invoice
+- **MensajeReceptor** - Ignored for calculations
+
+### Security Considerations
+
+For production deployment:
+
+1. Add authentication
+2. Implement file size limits
+3. Add virus scanning for uploads
+4. Use HTTPS
+5. Implement rate limiting
+
+## Design System
+
+### Colors
+- Primary: `#2563eb` (Blue)
+- Background Light: `#f8f9fc`
+- Surface Light: `#ffffff`
+- Text Main: `#0e121b`
+- Text Secondary: `#4d6599`
+- Border: `#d0d7e7`
+
+### Typography
+- Font Family: Inter
+- Icons: Material Symbols Outlined
+
+## Scripts
+
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm lint` - Run ESLint
+- `pnpm test:bccr` - Test BCCR API integration
+
+## License
+
+This project is for demonstration purposes.
+
+## Support
+
+For questions or issues, please contact the development team.
+
