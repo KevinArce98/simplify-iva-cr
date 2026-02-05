@@ -49,7 +49,7 @@ export function Sidebar() {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-blue-600/10 text-blue-600'
+                    ? 'bg-[var(--primary)]/10 text-[var(--primary)]'
                     : 'text-[#0e121b] hover:bg-[#f3f4f6]'
                 }`}
               >
@@ -65,7 +65,7 @@ export function Sidebar() {
       <div className="px-2 pb-2">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#4d6599] hover:text-blue-600 hover:bg-red-50 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#4d6599] hover:text-[var(--primary)] hover:bg-red-50 transition-colors"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
             logout

@@ -33,23 +33,23 @@ export default async function ReportsPage({
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-[#e7ebf3] bg-white px-10 py-3 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="size-8 flex items-center justify-center bg-blue-600 text-white rounded-lg">
+          <div className="size-8 flex items-center justify-center bg-[var(--primary)] text-white rounded-lg">
             <span className="material-symbols-outlined text-xl">calculate</span>
           </div>
           <h2 className="text-lg font-bold leading-tight tracking-tight text-gray-900">CR VAT Calculator</h2>
         </div>
         <div className="flex flex-1 justify-end gap-8">
           <div className="hidden md:flex items-center gap-9">
-            <Link className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors" href="/">
+            <Link className="text-sm font-medium text-gray-700 hover:text-[var(--primary)] transition-colors" href="/">
               Dashboard
             </Link>
             <Link
-              className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              className="text-sm font-medium text-gray-700 hover:text-[var(--primary)] transition-colors"
               href="/upload"
             >
               Upload XMLs
             </Link>
-            <Link className="text-sm font-medium text-blue-600" href="/reports">
+            <Link className="text-sm font-medium text-[var(--primary)]" href="/reports">
               Reports
             </Link>
           </div>
@@ -149,7 +149,7 @@ export default async function ReportsPage({
                   <span className="material-symbols-outlined text-[18px]">print</span>
                   <span>Imprimir</span>
                 </button>
-                <button className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-blue-600 hover:bg-blue-600/90 text-white text-sm font-bold shadow-sm transition-all">
+                <button className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white text-sm font-bold shadow-sm transition-all">
                   <span className="material-symbols-outlined text-[18px]">download</span>
                   <span>Exportar Excel</span>
                 </button>
@@ -162,7 +162,7 @@ export default async function ReportsPage({
             {/* Ventas Gravadas (Base) */}
             <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
               <div className="flex items-center gap-2 text-[#4d6599]">
-                <span className="material-symbols-outlined text-blue-500 text-lg">storefront</span>
+                <span className="material-symbols-outlined text-[var(--primary)] text-lg">storefront</span>
                 <p className="text-xs font-semibold uppercase tracking-wider">Base Ventas Gravadas</p>
               </div>
               <p className="text-2xl font-bold tracking-tight text-gray-900">
@@ -213,12 +213,12 @@ export default async function ReportsPage({
             {/* Débito */}
             <div className="flex flex-col gap-3 rounded-xl p-6 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <span className="material-symbols-outlined text-6xl text-blue-500">
+                <span className="material-symbols-outlined text-6xl text-[var(--primary)]">
                   trending_up
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[#4d6599]">
-                <span className="material-symbols-outlined text-blue-500">arrow_circle_up</span>
+                <span className="material-symbols-outlined text-[var(--primary)]">arrow_circle_up</span>
                 <p className="text-sm font-semibold uppercase tracking-wider">
                   IVA Débito (Cobrado)
                 </p>
@@ -228,7 +228,7 @@ export default async function ReportsPage({
               </p>
               <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2">
                 <div
-                  className="bg-blue-500 h-1.5 rounded-full"
+                  className="bg-[var(--primary)] h-1.5 rounded-full"
                   style={{ width: `${ivaDebitoPercentage}%` }}
                 ></div>
               </div>
@@ -261,13 +261,13 @@ export default async function ReportsPage({
             </div>
 
             {/* Total */}
-            <div className="flex flex-col gap-3 rounded-xl p-6 bg-linear-to-br from-blue-50 to-white shadow-md border border-blue-100 relative overflow-hidden">
+            <div className="flex flex-col gap-3 rounded-xl p-6 bg-linear-to-br from-[var(--primary)]/10 to-white shadow-md border border-[var(--primary)]/20 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-10">
-                <span className="material-symbols-outlined text-6xl text-blue-600">
+                <span className="material-symbols-outlined text-6xl text-[var(--primary)]">
                   account_balance_wallet
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-blue-600">
+              <div className="flex items-center gap-2 text-[var(--primary)]">
                 <span className="material-symbols-outlined">payments</span>
                 <p className="text-sm font-bold uppercase tracking-wider">IVA a Pagar</p>
               </div>
@@ -284,7 +284,7 @@ export default async function ReportsPage({
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between px-1">
               <h2 className="text-xl font-bold leading-tight tracking-tight flex items-center gap-2 text-gray-900">
-                <span className="material-symbols-outlined text-blue-600">table_chart</span>
+                <span className="material-symbols-outlined text-[var(--primary)]">table_chart</span>
                 Resumen de Transacciones
               </h2>
               <div className="flex gap-2">
@@ -293,7 +293,7 @@ export default async function ReportsPage({
                     search
                   </span>
                   <input
-                    className="h-9 pl-9 pr-4 rounded-lg border border-gray-200 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none w-64"
+                    className="h-9 pl-9 pr-4 rounded-lg border border-gray-200 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none w-64"
                     placeholder="Buscar..."
                     type="text"
                   />
@@ -333,11 +333,11 @@ export default async function ReportsPage({
                           <Link
                             key={`${period.año}-${period.mes}`}
                             href={`/reports?mes=${period.mes}&año=${period.año}`}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-blue-300 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium text-blue-900"
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-[var(--primary)]/30 rounded-lg hover:bg-[var(--primary)]/10 transition-colors text-sm font-medium text-[var(--primary-dark)]"
                           >
                             <span className="material-symbols-outlined text-[16px]">calendar_month</span>
                             <span>{getMonthName(period.mes)} {period.año}</span>
-                            <span className="text-xs bg-blue-100 px-2 py-0.5 rounded-full">
+                            <span className="text-xs bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded-full font-semibold">
                               {period.count}
                             </span>
                           </Link>
@@ -348,7 +348,7 @@ export default async function ReportsPage({
                   
                   <Link
                     href="/upload"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-600/90 transition-colors text-sm font-medium"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-dark)] transition-colors text-sm font-medium"
                   >
                     <span className="material-symbols-outlined text-[18px]">upload</span>
                     Subir Más Archivos
@@ -404,7 +404,7 @@ export default async function ReportsPage({
                             <span
                               className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
                                 invoice.tipo === 'EMITIDA'
-                                  ? 'bg-blue-50 text-blue-700 ring-blue-600/20'
+                                  ? 'bg-[var(--primary)]/10 text-[var(--primary)] ring-[var(--primary)]/20'
                                   : 'bg-green-50 text-green-700 ring-green-600/20'
                               }`}
                             >
@@ -457,7 +457,7 @@ export default async function ReportsPage({
                   <button className="px-3 py-1 rounded bg-white border border-gray-200 text-sm hover:bg-gray-50 disabled:opacity-50">
                     Anterior
                   </button>
-                  <button className="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium">
+                  <button className="px-3 py-1 rounded bg-[var(--primary)] text-white text-sm font-medium">
                     1
                   </button>
                   <button className="px-3 py-1 rounded bg-white border border-gray-200 text-sm hover:bg-gray-50 disabled:opacity-50">

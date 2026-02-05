@@ -42,6 +42,19 @@ export async function processXMLFile(
     // Parse XML
     const parsed = await parseInvoiceXML(fileContent);
 
+    // Check if invoice already exists
+    if (parsed.clave) {
+      const existingInvoice = await prisma.invoice.findUnique({
+        where: {
+          clave: parsed.clave,
+        },
+      });
+
+      if (existingInvoice) {
+        throw new Error(`La factura con clave ${parsed.clave} ya fue cargada anteriormente`);
+      }
+    }
+
     // Get exchange rate if USD
     let tipoCambio = 1.0;
     if (parsed.moneda === 'USD') {

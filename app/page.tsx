@@ -78,18 +78,18 @@ export default async function HomePage() {
             {/* Upload Expenses */}
             <Link
               href="/upload?type=gasto"
-              className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-blue-600/50 transition-all duration-300"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-[var(--primary)]/50 transition-all duration-300"
             >
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <span
-                  className="material-symbols-outlined text-blue-600"
+                  className="material-symbols-outlined text-[var(--primary)]"
                   style={{ fontSize: 120 }}
                 >
                   receipt_long
                 </span>
               </div>
               <div className="flex flex-col gap-4 z-10">
-                <div className="bg-blue-600/10 w-12 h-12 rounded-lg flex items-center justify-center text-blue-600 mb-2">
+                <div className="bg-[var(--primary)]/10 w-12 h-12 rounded-lg flex items-center justify-center text-[var(--primary)] mb-2">
                   <span className="material-symbols-outlined">upload_file</span>
                 </div>
                 <div>
@@ -102,7 +102,7 @@ export default async function HomePage() {
                 </div>
               </div>
               <div className="mt-6 z-10">
-                <div className="flex items-center justify-center w-full bg-blue-600 hover:bg-blue-600/90 text-white font-medium py-2.5 px-4 rounded-lg transition-colors gap-2">
+                <div className="flex items-center justify-center w-full bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-medium py-2.5 px-4 rounded-lg transition-colors gap-2">
                   <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                     add
                   </span>
@@ -114,7 +114,7 @@ export default async function HomePage() {
             {/* Upload Invoices */}
             <Link
               href="/upload?type=emitida"
-              className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-blue-600/50 transition-all duration-300"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-[var(--primary)]/50 transition-all duration-300"
             >
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <span
@@ -212,7 +212,7 @@ export default async function HomePage() {
               </div>
 
               {/* Total */}
-              <div className="bg-blue-600 p-5 rounded-xl border border-blue-600 shadow-sm flex flex-col gap-2 relative overflow-hidden">
+              <div className="bg-[var(--primary)] p-5 rounded-xl border border-[var(--primary)] shadow-sm flex flex-col gap-2 relative overflow-hidden">
                 <div className="absolute right-0 top-0 p-4 opacity-10">
                   <span
                     className="material-symbols-outlined text-white"
