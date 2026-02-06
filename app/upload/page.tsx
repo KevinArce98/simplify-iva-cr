@@ -134,31 +134,32 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="relative flex h-screen w-full flex-row overflow-hidden">
+    <>
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
-        {/* Full Screen Loader */}
-        {isProcessing && (
-          <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl">
-              <div className="relative size-16">
-                <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-                <div className="absolute inset-0 animate-spin rounded-full border-4 border-(--primary) border-t-transparent"></div>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <h3 className="text-lg font-bold text-[#0e121b]">Procesando archivos...</h3>
-                <p className="text-sm text-[#4d6599]">
-                  Por favor espera mientras validamos tus facturas
-                </p>
+      <div className="relative flex h-screen w-full flex-row overflow-hidden md:pl-64">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
+          {/* Full Screen Loader */}
+          {isProcessing && (
+            <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl">
+                <div className="relative size-16">
+                  <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+                  <div className="absolute inset-0 animate-spin rounded-full border-4 border-(--primary) border-t-transparent"></div>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <h3 className="text-lg font-bold text-[#0e121b]">Procesando archivos...</h3>
+                  <p className="text-sm text-[#4d6599]">
+                    Por favor espera mientras validamos tus facturas
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="flex flex-col max-w-300 w-full mx-auto p-4 md:p-8 gap-8 pt-4 md:pt-8">
+          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-20 md:py-8 gap-8">
           {/* Page Heading */}
           <div className="flex flex-col gap-3">
             <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">
@@ -412,6 +413,7 @@ export default function UploadPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

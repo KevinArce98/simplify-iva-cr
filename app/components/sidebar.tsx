@@ -34,7 +34,7 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-[#d0d7e7] sticky top-0 z-50">
+      <div className="md:hidden fixed top-0 left-0 right-0 flex items-center justify-between p-4 bg-white border-b border-[#d0d7e7] z-50">
         <div className="flex flex-col">
           <h1 className="text-[#0e121b] text-base font-bold">Simplify IVA CR</h1>
           <p className="text-[#4d6599] text-xs font-normal">Costa Rica</p>
@@ -102,7 +102,7 @@ export function Sidebar() {
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex h-full w-64 flex-col justify-between border-r border-[#d0d7e7] bg-white p-4">
+      <div className="hidden md:flex fixed left-0 top-0 h-full w-64 flex-col justify-between border-r border-[#d0d7e7] bg-white p-4 z-30">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col px-2">
             <h1 className="text-[#0e121b] text-lg font-bold leading-normal">

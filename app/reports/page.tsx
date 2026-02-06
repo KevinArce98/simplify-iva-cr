@@ -48,13 +48,14 @@ export default async function ReportsPage({
       : 0;
 
   return (
-    <div className="relative flex h-screen w-full flex-row overflow-hidden">
+    <>
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
-        <div className="flex flex-col max-w-300 w-full mx-auto p-4 md:p-8 gap-8 pt-4 md:pt-8">
+      <div className="relative flex h-screen w-full flex-row overflow-hidden md:pl-64">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
+          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-20 md:py-8 gap-8">
           {/* Due Date Alert */}
           {summary.estaProximoVencimiento && !summary.estaVencido && (
             <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg shadow-sm">
@@ -326,7 +327,7 @@ export default async function ReportsPage({
 
           {/* Table */}
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between px-1">
+            <div className="flex md:flex-row flex-col gap-3 items-center justify-between px-1">
               <h2 className="text-xl font-bold leading-tight tracking-tight flex items-center gap-2 text-gray-900">
                 <span className="material-symbols-outlined text-(--primary)">
                   table_chart
@@ -535,6 +536,7 @@ export default async function ReportsPage({
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
