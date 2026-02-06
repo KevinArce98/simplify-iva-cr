@@ -48,7 +48,7 @@ export default function LoginPage() {
                 calculate
               </span>
             </div>
-            <h2 className="text-[#0e121b] text-2xl font-bold">IVA Calculadora</h2>
+            <h2 className="text-[#0e121b] text-2xl font-bold">Simplify IVA CR</h2>
             <p className="text-[#4d6599] text-sm mt-2">Inicia sesión para continuar</p>
           </div>
 

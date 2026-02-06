@@ -34,7 +34,7 @@ export function Sidebar() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col px-2">
           <h1 className="text-[#0e121b] text-lg font-bold leading-normal">
-            IVA Calculadora
+            Simplify IVA CR
           </h1>
           <p className="text-[#4d6599] text-sm font-normal leading-normal">
             Costa Rica

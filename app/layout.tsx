@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
 
-const inter = Inter({
+const montserrat = Montserrat({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-montserrat",
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "IVA Calculadora - Costa Rica",
-  description: "Cálculo mensual de IVA para profesionales independientes",
+  title: "Simplify IVA CR",
+  description: "Cálculo mensual de IVA para profesionales independientes en Costa Rica",
 };
 
 export default function RootLayout({
@@ -27,7 +28,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${inter.variable} antialiased font-sans`}>
+      <body className={`${montserrat.variable} antialiased font-sans`}>
         <Providers>
           {children}
         </Providers>

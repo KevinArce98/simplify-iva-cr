@@ -1,4 +1,4 @@
-# IVA Calculadora - Costa Rica
+# Simplify IVA CR
 
 Production-ready web application for calculating monthly IVA (VAT) for independent professionals in Costa Rica.
 

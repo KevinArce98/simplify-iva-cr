@@ -37,7 +37,7 @@ export default async function HomePage({
         {/* Mobile Header */}
         <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-[#d0d7e7] sticky top-0 z-10">
           <div className="flex flex-col">
-            <h1 className="text-[#0e121b] text-base font-bold">IVA Calculadora</h1>
+            <h1 className="text-[#0e121b] text-base font-bold">Simplify IVA CR</h1>
           </div>
           <button className="text-[#0e121b]">
             <span className="material-symbols-outlined">menu</span>
