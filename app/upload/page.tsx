@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useRef, useMemo } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { processXMLFile, type ProcessFileResult } from '../actions';
 import type { InvoiceType, UploadedFile } from '@/lib/types';
 import { formatFileSize } from '@/lib/utils';
+import { Sidebar } from '../components/sidebar';
 
 export default function UploadPage() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -133,74 +134,38 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="relative flex h-auto min-h-screen w-full flex-col">
-      {/* Full Screen Loader */}
-      {isProcessing && (
-        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl">
-            <div className="relative size-16">
-              <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-              <div className="absolute inset-0 animate-spin rounded-full border-4 border-(--primary) border-t-transparent"></div>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <h3 className="text-lg font-bold text-[#0e121b]">Procesando archivos...</h3>
-              <p className="text-sm text-[#4d6599]">
-                Por favor espera mientras validamos tus facturas
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Top Navigation */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#d0d7e7] px-6 lg:px-10 py-3 bg-white sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <div className="size-8 text-(--primary) flex items-center justify-center rounded-lg bg-(--primary)/10">
-            <span className="material-symbols-outlined text-2xl">calculate</span>
-          </div>
-          <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">
-            Simplify IVA CR
-          </h2>
-        </div>
-        <div className="hidden md:flex flex-1 justify-end gap-8">
-          <div className="flex items-center gap-6">
-            <Link
-              className="text-sm font-medium leading-normal text-[#4d6599] hover:text-(--primary) transition-colors"
-              href="/"
-            >
-              Dashboard
-            </Link>
-            <Link
-              className="text-sm font-medium leading-normal text-(--primary)"
-              href="/upload"
-            >
-              Carga de XML
-            </Link>
-            <Link
-              className="text-sm font-medium leading-normal text-[#4d6599] hover:text-(--primary) transition-colors"
-              href="/reports"
-            >
-              Declaraciones
-            </Link>
-          </div>
-        </div>
-        <div className="md:hidden text-[#0e121b]">
-          <span className="material-symbols-outlined">menu</span>
-        </div>
-      </header>
+    <div className="relative flex h-screen w-full flex-row overflow-hidden">
+      {/* Sidebar */}
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="px-4 md:px-10 lg:px-40 flex flex-1 justify-center py-8 bg-[#f8f9fc]">
-        <div className="flex flex-col max-w-5xl flex-1 gap-8">
+      <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
+        {/* Full Screen Loader */}
+        {isProcessing && (
+          <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl">
+              <div className="relative size-16">
+                <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+                <div className="absolute inset-0 animate-spin rounded-full border-4 border-(--primary) border-t-transparent"></div>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <h3 className="text-lg font-bold text-[#0e121b]">Procesando archivos...</h3>
+                <p className="text-sm text-[#4d6599]">
+                  Por favor espera mientras validamos tus facturas
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col max-w-300 w-full mx-auto p-4 md:p-8 gap-8 pt-4 md:pt-8">
           {/* Page Heading */}
-          <div className="flex flex-col gap-3 px-2">
-            <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em] text-[#0e121b]">
-              Carga de Facturas XML
-            </h1>
-            <p className="text-[#4d6599] text-base md:text-lg font-normal leading-normal max-w-2xl">
-              Arrastra y suelta tus archivos XML de facturación electrónica para procesar
-              tus declaraciones de IVA. El sistema validará automáticamente la estructura
-              y los montos.
+          <div className="flex flex-col gap-3">
+            <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">
+              Carga de Facturas
+            </h2>
+            <p className="text-[#4d6599] text-sm font-normal leading-normal">
+              Arrastra y suelta tus archivos XML de facturación electrónica para procesar tus declaraciones de IVA
             </p>
           </div>
 
@@ -446,7 +411,7 @@ export default function UploadPage() {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

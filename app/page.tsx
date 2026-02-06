@@ -34,22 +34,12 @@ export default async function HomePage({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
-        {/* Mobile Header */}
-        <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-[#d0d7e7] sticky top-0 z-10">
-          <div className="flex flex-col">
-            <h1 className="text-[#0e121b] text-base font-bold">Simplify IVA CR</h1>
-          </div>
-          <button className="text-[#0e121b]">
-            <span className="material-symbols-outlined">menu</span>
-          </button>
-        </div>
-
-        <div className="flex flex-col max-w-300 w-full mx-auto p-4 md:p-8 gap-8">
+        <div className="flex flex-col max-w-300 w-full mx-auto p-4 md:p-8 gap-8 pt-4 md:pt-8">
           {/* Page Heading */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="flex flex-col gap-1">
-              <h2 className="text-[#0e121b] tracking-tight text-[32px] font-bold leading-tight">
-                Cálculo Mensual de IVA
+              <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">
+                Panel de Control
               </h2>
               <p className="text-[#4d6599] text-sm font-normal leading-normal">
                 Resumen de obligaciones tributarias para profesionales independientes

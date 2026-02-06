@@ -15,6 +15,7 @@ import {
 } from '@/lib/utils';
 import PeriodSelector from './period-selector';
 import { Suspense } from 'react';
+import { Sidebar } from '../components/sidebar';
 
 export default async function ReportsPage({
   searchParams,
@@ -47,41 +48,13 @@ export default async function ReportsPage({
       : 0;
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-x-hidden bg-[#f8f9fc] min-h-screen">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-[#e7ebf3] bg-white px-10 py-3 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="size-8 flex items-center justify-center bg-(--primary) text-white rounded-lg">
-            <span className="material-symbols-outlined text-xl">calculate</span>
-          </div>
-          <h2 className="text-lg font-bold leading-tight tracking-tight text-gray-900">
-            Simplify IVA CR
-          </h2>
-        </div>
-        <div className="flex flex-1 justify-end gap-8">
-          <div className="hidden md:flex items-center gap-9">
-            <Link
-              className="text-sm font-medium text-gray-700 hover:text-(--primary) transition-colors"
-              href="/"
-            >
-              Dashboard
-            </Link>
-            <Link
-              className="text-sm font-medium text-gray-700 hover:text-(--primary) transition-colors"
-              href="/upload"
-            >
-              Upload XMLs
-            </Link>
-            <Link className="text-sm font-medium text-(--primary)" href="/reports">
-              Reports
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="relative flex h-screen w-full flex-row overflow-hidden">
+      {/* Sidebar */}
+      <Sidebar />
 
-      {/* Content */}
-      <div className="flex flex-1 justify-center py-8 px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col max-w-300 flex-1 gap-8">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
+        <div className="flex flex-col max-w-300 w-full mx-auto p-4 md:p-8 gap-8 pt-4 md:pt-8">
           {/* Due Date Alert */}
           {summary.estaProximoVencimiento && !summary.estaVencido && (
             <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg shadow-sm">
@@ -134,13 +107,20 @@ export default async function ReportsPage({
           {/* Page Heading */}
           <div className="flex flex-wrap justify-between items-end gap-4 border-b border-gray-200 pb-6">
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-sm text-[#4d6599] mb-1">
+              <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">
+                Declaraciones de IVA
+              </h2>
+              <p className="text-gray-600 text-base font-normal max-w-2xl mb-4">
+                Revise su balance de IVA y los detalles de las transacciones para el
+                período seleccionado. Los montos están expresados en Colones (CRC).
+              </p>
+              <div className="flex items-center gap-2 text-sm text-[#4d6599]">
                 <span className="material-symbols-outlined text-[18px]">
                   calendar_month
                 </span>
                 <span>Periodo: {summary.periodo}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-[#4d6599] mb-1">
+              <div className="flex items-center gap-2 text-sm text-[#4d6599]">
                 <span className="material-symbols-outlined text-[18px]">event</span>
                 <span>Vencimiento: {formatDueDate(summary.mes, summary.año)}</span>
                 {!summary.estaVencido && summary.diasHastaVencimiento >= 0 && (
@@ -162,13 +142,6 @@ export default async function ReportsPage({
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">
-                Resultados del Cálculo de IVA
-              </h1>
-              <p className="text-gray-600 text-base font-normal max-w-2xl">
-                Revise su balance de IVA y los detalles de las transacciones para el
-                período seleccionado. Los montos están expresados en Colones (CRC).
-              </p>
             </div>
             <div className="flex flex-col gap-3">
               <Suspense fallback={<div className="h-10" />}>
