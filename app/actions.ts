@@ -51,7 +51,9 @@ export async function processXMLFile(
       });
 
       if (existingInvoice) {
-        throw new Error(`La factura con clave ${parsed.clave} ya fue cargada anteriormente`);
+        throw new Error(
+          `La factura con clave ${parsed.clave} ya fue cargada anteriormente`
+        );
       }
     }
 
@@ -203,6 +205,9 @@ export async function getTaxSummary(mes: number, año: number) {
     subtotalComprasExentas: 0,
     ivaPagar: 0,
     creditoFiscal: 0,
+    saldoAFavorAnterior: 0,
+    ivaPagarConSaldo: 0,
+    nuevoSaldoAFavor: 0,
   };
 
   if (!session?.user?.id) {
@@ -238,27 +243,59 @@ export async function getTaxSummary(mes: number, año: number) {
 
   // Subtotals for Hacienda - Base imponible (monto antes de IVA)
   const subtotalVentasGravadas = ventas.reduce(
-    (sum: number, inv: Invoice) => sum + (inv.subtotalGravado || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv: Invoice) =>
+      sum + (inv.subtotalGravado || 0) * (inv.tipoCambio || 1),
     0
   );
 
   const subtotalVentasExentas = ventas.reduce(
-    (sum: number, inv: Invoice) => sum + (inv.subtotalExento || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv: Invoice) =>
+      sum + (inv.subtotalExento || 0) * (inv.tipoCambio || 1),
     0
   );
 
   const subtotalComprasGravadas = compras.reduce(
-    (sum: number, inv: Invoice) => sum + (inv.subtotalGravado || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv: Invoice) =>
+      sum + (inv.subtotalGravado || 0) * (inv.tipoCambio || 1),
     0
   );
 
   const subtotalComprasExentas = compras.reduce(
-    (sum: number, inv: Invoice) => sum + (inv.subtotalExento || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv: Invoice) =>
+      sum + (inv.subtotalExento || 0) * (inv.tipoCambio || 1),
     0
   );
 
   const ivaPagar = Math.max(0, ivaVentas - ivaCompras);
   const creditoFiscal = Math.max(0, ivaCompras - ivaVentas);
+
+  // Obtener saldo a favor del usuario
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { saldoAFavor: true },
+  });
+
+  const saldoAFavorAnterior = user?.saldoAFavor || 0;
+
+  // Calcular IVA a pagar después de aplicar saldo a favor
+  let ivaPagarConSaldo = ivaPagar;
+  let nuevoSaldoAFavor = saldoAFavorAnterior;
+
+  if (ivaPagar > 0) {
+    // Si hay IVA a pagar, aplicamos el saldo a favor
+    if (saldoAFavorAnterior >= ivaPagar) {
+      // El saldo cubre todo el IVA
+      nuevoSaldoAFavor = saldoAFavorAnterior - ivaPagar;
+      ivaPagarConSaldo = 0;
+    } else {
+      // El saldo cubre parcialmente
+      ivaPagarConSaldo = ivaPagar - saldoAFavorAnterior;
+      nuevoSaldoAFavor = 0;
+    }
+  } else if (creditoFiscal > 0) {
+    // Si hay crédito fiscal, se suma al saldo a favor
+    nuevoSaldoAFavor = saldoAFavorAnterior + creditoFiscal;
+  }
 
   return {
     ivaDebito: ivaVentas,
@@ -277,6 +314,9 @@ export async function getTaxSummary(mes: number, año: number) {
     subtotalComprasExentas,
     ivaPagar,
     creditoFiscal,
+    saldoAFavorAnterior,
+    ivaPagarConSaldo,
+    nuevoSaldoAFavor,
   };
 }
 
@@ -297,6 +337,47 @@ export async function getAllInvoices() {
     orderBy: {
       fechaEmision: 'desc',
     },
+  });
+
+  return invoices.map((invoice: Invoice) => ({
+    id: invoice.id,
+    tipo: invoice.tipo as InvoiceType,
+    fecha: invoice.fechaEmision || new Date(),
+    proveedor: invoice.tipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
+    cliente: invoice.tipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
+    numeroFactura: invoice.numeroConsecutivo || undefined,
+    moneda: invoice.tipoMoneda || 'CRC',
+    ivaOriginal: invoice.totalImpuesto || 0,
+    totalOriginal: invoice.totalComprobante || 0,
+    tipoCambio: invoice.tipoCambio || 1,
+    ivaCRC: (invoice.totalImpuesto || 0) * (invoice.tipoCambio || 1),
+    totalCRC: (invoice.totalComprobante || 0) * (invoice.tipoCambio || 1),
+    subtotalGravado: invoice.subtotalGravado || 0,
+    subtotalExento: invoice.subtotalExento || 0,
+    subtotalGravadoCRC: (invoice.subtotalGravado || 0) * (invoice.tipoCambio || 1),
+    subtotalExentoCRC: (invoice.subtotalExento || 0) * (invoice.tipoCambio || 1),
+    tarifaIVA: invoice.tarifaIVA || 13,
+  }));
+}
+
+/**
+ * Gets recent invoices (last 5)
+ */
+export async function getRecentInvoices() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return [];
+  }
+
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      userId: session.user.id,
+    },
+    orderBy: {
+      fechaEmision: 'desc',
+    },
+    take: 5,
   });
 
   return invoices.map((invoice: Invoice) => ({
@@ -378,4 +459,26 @@ export async function clearAllInvoices() {
       userId: session.user.id,
     },
   });
+}
+
+/**
+ * Updates the user's saldo a favor after declaring taxes
+ */
+export async function actualizarSaldoAFavor(mes: number, año: number) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  // Get current tax summary
+  const summary = await getTaxSummary(mes, año);
+
+  // Update user's saldo a favor
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { saldoAFavor: summary.nuevoSaldoAFavor },
+  });
+
+  return summary.nuevoSaldoAFavor;
 }

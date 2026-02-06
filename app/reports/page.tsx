@@ -268,14 +268,26 @@ export default async function ReportsPage({
                 </span>
               </div>
               <div className="flex items-center gap-2 text-(--primary)">
-                <span className="material-symbols-outlined">payments</span>
-                <p className="text-sm font-bold uppercase tracking-wider">IVA a Pagar</p>
+                <span className="material-symbols-outlined">
+                  {summary.ivaPagarConSaldo > 0 ? 'payments' : 'savings'}
+                </span>
+                <p className="text-sm font-bold uppercase tracking-wider">
+                  {summary.ivaPagarConSaldo > 0 ? 'IVA a Pagar' : 'Saldo a Favor'}
+                </p>
               </div>
               <p className="text-4xl font-black tracking-tight text-gray-900">
-                {formatCRC(summary.ivaPagar)}
+                {formatCRC(summary.ivaPagarConSaldo > 0 ? summary.ivaPagarConSaldo : summary.nuevoSaldoAFavor)}
               </p>
+              {summary.saldoAFavorAnterior > 0 && (
+                <p className="text-xs text-blue-600 font-medium flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">info</span>
+                  Saldo aplicado: {formatCRC(Math.min(summary.saldoAFavorAnterior, summary.ivaPagar))}
+                </p>
+              )}
               <p className="text-xs text-[#4d6599] mt-1 font-medium">
-                Vence el 15 de {getMonthName((mes % 12) + 1)}
+                {summary.ivaPagarConSaldo > 0 
+                  ? `Vence el 15 de ${getMonthName((mes % 12) + 1)}`
+                  : 'Se acumulará para futuras declaraciones'}
               </p>
             </div>
           </div>

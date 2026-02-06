@@ -43,15 +43,13 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Logo/Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[var(--primary)] rounded-2xl mb-4">
-              <span className="material-symbols-outlined text-white text-3xl">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-(--primary) rounded-2xl mb-4">
+              <span className="material-symbols-outlined text-white" style={{ fontSize: 40 }}>
                 calculate
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-[#0e121b]">IVA Calculadora</h1>
-            <p className="text-[#4d6599] text-sm mt-2">
-              Inicia sesión para continuar
-            </p>
+            <h2 className="text-[#0e121b] text-2xl font-bold">IVA Calculadora</h2>
+            <p className="text-[#4d6599] text-sm mt-2">Inicia sesión para continuar</p>
           </div>
 
           {/* Error Message */}
@@ -79,7 +77,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-[#d0d7e7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[#0e121b]"
+                className="w-full px-4 py-3 border border-[#d0d7e7] rounded-lg focus:outline-none focus:ring-2 focus:ring-(--primary) focus:border-transparent text-[#0e121b]"
                 placeholder="tu@email.com"
                 disabled={isLoading}
               />
@@ -98,7 +96,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-[#d0d7e7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[#0e121b]"
+                className="w-full px-4 py-3 border border-[#d0d7e7] rounded-lg focus:outline-none focus:ring-2 focus:ring-(--primary) focus:border-transparent text-[#0e121b]"
                 placeholder="••••••••"
                 disabled={isLoading}
               />
@@ -107,7 +105,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[var(--primary)] text-white py-3 rounded-lg font-medium hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-(--primary) text-white py-3 rounded-lg font-medium hover:bg-(--primary-dark) focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -131,7 +129,7 @@ export default function LoginPage() {
               ¿No tienes una cuenta?{' '}
               <Link
                 href="/register"
-                className="text-[var(--primary)] font-medium hover:text-[var(--primary-dark)] transition-colors"
+                className="text-(--primary) font-medium hover:text-(--primary-dark) transition-colors"
               >
                 Regístrate aquí
               </Link>

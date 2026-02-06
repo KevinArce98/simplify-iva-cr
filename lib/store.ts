@@ -80,6 +80,9 @@ class InvoiceStore {
       .filter((inv) => inv.tipo === 'GASTO')
       .reduce((sum, inv) => sum + (inv.subtotalExentoCRC || 0), 0);
 
+    const ivaPagar = Math.max(0, ivaDebito - ivaCredito);
+    const creditoFiscal = Math.max(0, ivaCredito - ivaDebito);
+
     return {
       ivaDebito,
       ivaCredito,
@@ -95,8 +98,11 @@ class InvoiceStore {
       subtotalVentasExentas,
       subtotalComprasGravadas,
       subtotalComprasExentas,
-      ivaPagar: Math.max(0, ivaDebito - ivaCredito),
-      creditoFiscal: Math.max(0, ivaCredito - ivaDebito),
+      ivaPagar,
+      creditoFiscal,
+      saldoAFavorAnterior: 0, // In-memory store doesn't track this
+      ivaPagarConSaldo: ivaPagar, // Same as ivaPagar since no saldo is tracked
+      nuevoSaldoAFavor: creditoFiscal, // Same as creditoFiscal
     };
   }
 

@@ -15,6 +15,7 @@ model User {
   email         String    @unique
   password      String
   name          String?
+  saldoAFavor   Float     @default(0)  // Saldo a favor acumulado de períodos anteriores
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   invoices      Invoice[]

@@ -76,6 +76,10 @@ export type TaxSummary = {
   subtotalComprasExentas: number;   // Compras exentas
   ivaPagar: number;                 // IVA a pagar (ivaDebito - ivaCredito)
   creditoFiscal: number;            // Crédito fiscal si ivaCredito > ivaDebito
+  // Saldo a favor
+  saldoAFavorAnterior: number;      // Saldo a favor de períodos anteriores
+  ivaPagarConSaldo: number;         // IVA a pagar después de aplicar saldo a favor
+  nuevoSaldoAFavor: number;         // Nuevo saldo a favor para próximas declaraciones
 };
 
 export type ParsedXMLInvoice = {
