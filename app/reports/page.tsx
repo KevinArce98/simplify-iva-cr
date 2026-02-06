@@ -1,6 +1,18 @@
 import Link from 'next/link';
-import { getInvoicesByPeriod, getTaxSummary, getAllInvoices, getAvailablePeriods } from '../actions';
-import { formatCRC, formatUSD, formatDate, formatExchangeRate, getMonthName, formatDueDate } from '@/lib/utils';
+import {
+  getInvoicesByPeriod,
+  getTaxSummary,
+  getAllInvoices,
+  getAvailablePeriods,
+} from '../actions';
+import {
+  formatCRC,
+  formatUSD,
+  formatDate,
+  formatExchangeRate,
+  getMonthName,
+  formatDueDate,
+} from '@/lib/utils';
 import PeriodSelector from './period-selector';
 import { Suspense } from 'react';
 
@@ -21,11 +33,17 @@ export default async function ReportsPage({
 
   const ivaDebitoPercentage =
     summary.ivaDebito > 0
-      ? Math.min((summary.ivaDebito / (summary.ivaDebito + summary.ivaCredito)) * 100, 100)
+      ? Math.min(
+          (summary.ivaDebito / (summary.ivaDebito + summary.ivaCredito)) * 100,
+          100
+        )
       : 0;
   const ivaCreditoPercentage =
     summary.ivaCredito > 0
-      ? Math.min((summary.ivaCredito / (summary.ivaDebito + summary.ivaCredito)) * 100, 100)
+      ? Math.min(
+          (summary.ivaCredito / (summary.ivaDebito + summary.ivaCredito)) * 100,
+          100
+        )
       : 0;
 
   return (
@@ -36,11 +54,16 @@ export default async function ReportsPage({
           <div className="size-8 flex items-center justify-center bg-(--primary) text-white rounded-lg">
             <span className="material-symbols-outlined text-xl">calculate</span>
           </div>
-          <h2 className="text-lg font-bold leading-tight tracking-tight text-gray-900">CR VAT Calculator</h2>
+          <h2 className="text-lg font-bold leading-tight tracking-tight text-gray-900">
+            Simplify IVA CR
+          </h2>
         </div>
         <div className="flex flex-1 justify-end gap-8">
           <div className="hidden md:flex items-center gap-9">
-            <Link className="text-sm font-medium text-gray-700 hover:text-(--primary) transition-colors" href="/">
+            <Link
+              className="text-sm font-medium text-gray-700 hover:text-(--primary) transition-colors"
+              href="/"
+            >
               Dashboard
             </Link>
             <Link
@@ -71,12 +94,14 @@ export default async function ReportsPage({
                     Declaración Próxima a Vencer
                   </h3>
                   <p className="text-amber-800 text-sm">
-                    La declaración de IVA para el periodo de <strong>{summary.periodo}</strong> vence el{' '}
+                    La declaración de IVA para el periodo de{' '}
+                    <strong>{summary.periodo}</strong> vence el{' '}
                     <strong>{formatDueDate(summary.mes, summary.año)}</strong>.
                     {summary.diasHastaVencimiento > 0 && (
                       <span className="ml-1">
                         Quedan <strong>{summary.diasHastaVencimiento}</strong>{' '}
-                        {summary.diasHastaVencimiento === 1 ? 'día' : 'días'} para presentarla.
+                        {summary.diasHastaVencimiento === 1 ? 'día' : 'días'} para
+                        presentarla.
                       </span>
                     )}
                   </p>
@@ -96,9 +121,10 @@ export default async function ReportsPage({
                     Declaración Vencida
                   </h3>
                   <p className="text-red-800 text-sm">
-                    La declaración de IVA para el periodo de <strong>{summary.periodo}</strong> venció el{' '}
-                    <strong>{formatDueDate(summary.mes, summary.año)}</strong>. Por favor, presente su
-                    declaración lo antes posible para evitar sanciones.
+                    La declaración de IVA para el periodo de{' '}
+                    <strong>{summary.periodo}</strong> venció el{' '}
+                    <strong>{formatDueDate(summary.mes, summary.año)}</strong>. Por favor,
+                    presente su declaración lo antes posible para evitar sanciones.
                   </p>
                 </div>
               </div>
@@ -109,20 +135,24 @@ export default async function ReportsPage({
           <div className="flex flex-wrap justify-between items-end gap-4 border-b border-gray-200 pb-6">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm text-[#4d6599] mb-1">
-                <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  calendar_month
+                </span>
                 <span>Periodo: {summary.periodo}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-[#4d6599] mb-1">
                 <span className="material-symbols-outlined text-[18px]">event</span>
                 <span>Vencimiento: {formatDueDate(summary.mes, summary.año)}</span>
                 {!summary.estaVencido && summary.diasHastaVencimiento >= 0 && (
-                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                    summary.estaProximoVencimiento 
-                      ? 'bg-amber-100 text-amber-800' 
-                      : 'bg-green-100 text-green-800'
-                  }`}>
-                    {summary.diasHastaVencimiento === 0 
-                      ? 'Vence hoy' 
+                  <span
+                    className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      summary.estaProximoVencimiento
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-green-100 text-green-800'
+                    }`}
+                  >
+                    {summary.diasHastaVencimiento === 0
+                      ? 'Vence hoy'
                       : `${summary.diasHastaVencimiento} ${summary.diasHastaVencimiento === 1 ? 'día' : 'días'}`}
                   </span>
                 )}
@@ -136,8 +166,8 @@ export default async function ReportsPage({
                 Resultados del Cálculo de IVA
               </h1>
               <p className="text-gray-600 text-base font-normal max-w-2xl">
-                Revise su balance de IVA y los detalles de las transacciones para el período
-                seleccionado. Los montos están expresados en Colones (CRC).
+                Revise su balance de IVA y los detalles de las transacciones para el
+                período seleccionado. Los montos están expresados en Colones (CRC).
               </p>
             </div>
             <div className="flex flex-col gap-3">
@@ -145,11 +175,17 @@ export default async function ReportsPage({
                 <PeriodSelector />
               </Suspense>
               <div className="flex gap-3">
-                <button className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-white border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-bold shadow-sm">
+                <button
+                  className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-white border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled
+                >
                   <span className="material-symbols-outlined text-[18px]">print</span>
                   <span>Imprimir</span>
                 </button>
-                <button className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-(--primary) hover:bg-(--primary-dark) text-white text-sm font-bold shadow-sm transition-all">
+                <button
+                  className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-(--primary) hover:bg-(--primary-dark) text-white text-sm font-bold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled
+                >
                   <span className="material-symbols-outlined text-[18px]">download</span>
                   <span>Exportar Excel</span>
                 </button>
@@ -162,8 +198,12 @@ export default async function ReportsPage({
             {/* Ventas Gravadas (Base) */}
             <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
               <div className="flex items-center gap-2 text-[#4d6599]">
-                <span className="material-symbols-outlined text-(--primary) text-lg">storefront</span>
-                <p className="text-xs font-semibold uppercase tracking-wider">Base Ventas Gravadas</p>
+                <span className="material-symbols-outlined text-(--primary) text-lg">
+                  storefront
+                </span>
+                <p className="text-xs font-semibold uppercase tracking-wider">
+                  Base Ventas Gravadas
+                </p>
               </div>
               <p className="text-2xl font-bold tracking-tight text-gray-900">
                 {formatCRC(summary.subtotalVentasGravadas)}
@@ -174,8 +214,12 @@ export default async function ReportsPage({
             {/* Ventas Exentas */}
             <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
               <div className="flex items-center gap-2 text-[#4d6599]">
-                <span className="material-symbols-outlined text-amber-500 text-lg">remove_shopping_cart</span>
-                <p className="text-xs font-semibold uppercase tracking-wider">Ventas Exentas</p>
+                <span className="material-symbols-outlined text-amber-500 text-lg">
+                  remove_shopping_cart
+                </span>
+                <p className="text-xs font-semibold uppercase tracking-wider">
+                  Ventas Exentas
+                </p>
               </div>
               <p className="text-2xl font-bold tracking-tight text-gray-900">
                 {formatCRC(summary.subtotalVentasExentas)}
@@ -186,8 +230,12 @@ export default async function ReportsPage({
             {/* Compras Gravadas (Base) */}
             <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
               <div className="flex items-center gap-2 text-[#4d6599]">
-                <span className="material-symbols-outlined text-emerald-500 text-lg">shopping_cart</span>
-                <p className="text-xs font-semibold uppercase tracking-wider">Base Compras Gravadas</p>
+                <span className="material-symbols-outlined text-emerald-500 text-lg">
+                  shopping_cart
+                </span>
+                <p className="text-xs font-semibold uppercase tracking-wider">
+                  Base Compras Gravadas
+                </p>
               </div>
               <p className="text-2xl font-bold tracking-tight text-gray-900">
                 {formatCRC(summary.subtotalComprasGravadas)}
@@ -198,8 +246,12 @@ export default async function ReportsPage({
             {/* Compras Exentas */}
             <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
               <div className="flex items-center gap-2 text-[#4d6599]">
-                <span className="material-symbols-outlined text-purple-500 text-lg">production_quantity_limits</span>
-                <p className="text-xs font-semibold uppercase tracking-wider">Compras Exentas</p>
+                <span className="material-symbols-outlined text-purple-500 text-lg">
+                  production_quantity_limits
+                </span>
+                <p className="text-xs font-semibold uppercase tracking-wider">
+                  Compras Exentas
+                </p>
               </div>
               <p className="text-2xl font-bold tracking-tight text-gray-900">
                 {formatCRC(summary.subtotalComprasExentas)}
@@ -218,7 +270,9 @@ export default async function ReportsPage({
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[#4d6599]">
-                <span className="material-symbols-outlined text-(--primary)">arrow_circle_up</span>
+                <span className="material-symbols-outlined text-(--primary)">
+                  arrow_circle_up
+                </span>
                 <p className="text-sm font-semibold uppercase tracking-wider">
                   IVA Débito (Cobrado)
                 </p>
@@ -276,16 +330,21 @@ export default async function ReportsPage({
                 </p>
               </div>
               <p className="text-4xl font-black tracking-tight text-gray-900">
-                {formatCRC(summary.ivaPagarConSaldo > 0 ? summary.ivaPagarConSaldo : summary.nuevoSaldoAFavor)}
+                {formatCRC(
+                  summary.ivaPagarConSaldo > 0
+                    ? summary.ivaPagarConSaldo
+                    : summary.nuevoSaldoAFavor
+                )}
               </p>
               {summary.saldoAFavorAnterior > 0 && (
                 <p className="text-xs text-blue-600 font-medium flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">info</span>
-                  Saldo aplicado: {formatCRC(Math.min(summary.saldoAFavorAnterior, summary.ivaPagar))}
+                  Saldo aplicado:{' '}
+                  {formatCRC(Math.min(summary.saldoAFavorAnterior, summary.ivaPagar))}
                 </p>
               )}
               <p className="text-xs text-[#4d6599] mt-1 font-medium">
-                {summary.ivaPagarConSaldo > 0 
+                {summary.ivaPagarConSaldo > 0
                   ? `Vence el 15 de ${getMonthName((mes % 12) + 1)}`
                   : 'Se acumulará para futuras declaraciones'}
               </p>
@@ -296,7 +355,9 @@ export default async function ReportsPage({
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between px-1">
               <h2 className="text-xl font-bold leading-tight tracking-tight flex items-center gap-2 text-gray-900">
-                <span className="material-symbols-outlined text-(--primary)">table_chart</span>
+                <span className="material-symbols-outlined text-(--primary)">
+                  table_chart
+                </span>
                 Resumen de Transacciones
               </h2>
               <div className="flex gap-2">
@@ -321,7 +382,10 @@ export default async function ReportsPage({
             {invoices.length === 0 ? (
               <div className="w-full bg-white rounded-xl border border-gray-200 shadow-sm p-12 flex flex-col items-center justify-center gap-4">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-gray-400" style={{ fontSize: 32 }}>
+                  <span
+                    className="material-symbols-outlined text-gray-400"
+                    style={{ fontSize: 32 }}
+                  >
                     inbox
                   </span>
                 </div>
@@ -330,11 +394,11 @@ export default async function ReportsPage({
                     No hay transacciones para {getMonthName(mes)} {año}
                   </p>
                   <p className="text-[#4d6599] text-sm mb-4">
-                    {allInvoices.length > 0 
+                    {allInvoices.length > 0
                       ? 'Tienes facturas cargadas en otros períodos'
                       : 'Sube archivos XML para ver el desglose de transacciones'}
                   </p>
-                  
+
                   {availablePeriods.length > 0 && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                       <p className="text-sm font-medium text-blue-900 mb-3">
@@ -347,8 +411,12 @@ export default async function ReportsPage({
                             href={`/reports?mes=${period.mes}&año=${period.año}`}
                             className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-(--primary)/30 rounded-lg hover:bg-(--primary)/10 transition-colors text-sm font-medium text-(--primary-dark)"
                           >
-                            <span className="material-symbols-outlined text-[16px]">calendar_month</span>
-                            <span>{getMonthName(period.mes)} {period.año}</span>
+                            <span className="material-symbols-outlined text-[16px]">
+                              calendar_month
+                            </span>
+                            <span>
+                              {getMonthName(period.mes)} {period.año}
+                            </span>
                             <span className="text-xs bg-(--primary)/10 text-(--primary) px-2 py-0.5 rounded-full font-semibold">
                               {period.count}
                             </span>
@@ -357,7 +425,7 @@ export default async function ReportsPage({
                       </div>
                     </div>
                   )}
-                  
+
                   <Link
                     href="/upload"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-(--primary) text-white rounded-lg hover:bg-(--primary-dark) transition-colors text-sm font-medium"
@@ -398,7 +466,10 @@ export default async function ReportsPage({
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {invoices.map((invoice) => (
-                        <tr key={invoice.id} className="hover:bg-gray-50 transition-colors group">
+                        <tr
+                          key={invoice.id}
+                          className="hover:bg-gray-50 transition-colors group"
+                        >
                           <td className="px-4 py-3 text-sm font-medium text-[#4d6599]">
                             {formatDate(invoice.fecha)}
                           </td>
@@ -427,7 +498,9 @@ export default async function ReportsPage({
                             {formatCRC(invoice.subtotalGravadoCRC)}
                           </td>
                           <td className="px-4 py-3 text-sm text-right font-mono text-gray-600 bg-amber-50/30">
-                            {invoice.subtotalExentoCRC > 0 ? formatCRC(invoice.subtotalExentoCRC) : '-'}
+                            {invoice.subtotalExentoCRC > 0
+                              ? formatCRC(invoice.subtotalExentoCRC)
+                              : '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-center font-medium text-gray-600">
                             {invoice.ivaCRC > 0 ? `${invoice.tarifaIVA}%` : '0%'}
@@ -440,14 +513,22 @@ export default async function ReportsPage({
                     </tbody>
                     <tfoot className="bg-gray-100 border-t-2 border-gray-300">
                       <tr className="font-bold">
-                        <td colSpan={3} className="px-4 py-3 text-sm text-gray-700 uppercase">
+                        <td
+                          colSpan={3}
+                          className="px-4 py-3 text-sm text-gray-700 uppercase"
+                        >
                           Totales del Período
                         </td>
                         <td className="px-4 py-3 text-sm text-right font-mono text-gray-900 bg-blue-100/50">
-                          {formatCRC(summary.subtotalVentasGravadas + summary.subtotalComprasGravadas)}
+                          {formatCRC(
+                            summary.subtotalVentasGravadas +
+                              summary.subtotalComprasGravadas
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm text-right font-mono text-gray-700 bg-amber-100/50">
-                          {formatCRC(summary.subtotalVentasExentas + summary.subtotalComprasExentas)}
+                          {formatCRC(
+                            summary.subtotalVentasExentas + summary.subtotalComprasExentas
+                          )}
                         </td>
                         <td className="px-4 py-3"></td>
                         <td className="px-4 py-3 text-sm text-right font-mono text-gray-900 bg-gray-200/50">

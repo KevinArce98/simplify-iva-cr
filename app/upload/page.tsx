@@ -144,7 +144,9 @@ export default function UploadPage() {
             </div>
             <div className="flex flex-col items-center gap-2">
               <h3 className="text-lg font-bold text-[#0e121b]">Procesando archivos...</h3>
-              <p className="text-sm text-[#4d6599]">Por favor espera mientras validamos tus facturas</p>
+              <p className="text-sm text-[#4d6599]">
+                Por favor espera mientras validamos tus facturas
+              </p>
             </div>
           </div>
         </div>
@@ -157,7 +159,7 @@ export default function UploadPage() {
             <span className="material-symbols-outlined text-2xl">calculate</span>
           </div>
           <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">
-            VAT Calculator CR
+            Simplify IVA CR
           </h2>
         </div>
         <div className="hidden md:flex flex-1 justify-end gap-8">
@@ -207,7 +209,9 @@ export default function UploadPage() {
             {/* Zone: Gastos */}
             <div
               className={`group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed bg-white p-8 md:p-12 hover:border-(--primary) hover:bg-(--primary)/5 transition-all cursor-pointer ${
-                isDraggingGasto ? 'border-(--primary) bg-(--primary)/5' : 'border-[#d0d7e7]'
+                isDraggingGasto
+                  ? 'border-(--primary) bg-(--primary)/5'
+                  : 'border-[#d0d7e7]'
               }`}
               onDragOver={(e) => handleDragOver(e, 'GASTO')}
               onDragLeave={() => handleDragLeave('GASTO')}
@@ -240,7 +244,9 @@ export default function UploadPage() {
             {/* Zone: Emitidas */}
             <div
               className={`group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed bg-white p-8 md:p-12 hover:border-(--primary) hover:bg-(--primary)/5 transition-all cursor-pointer ${
-                isDraggingEmitida ? 'border-(--primary) bg-(--primary)/5' : 'border-[#d0d7e7]'
+                isDraggingEmitida
+                  ? 'border-(--primary) bg-(--primary)/5'
+                  : 'border-[#d0d7e7]'
               }`}
               onDragOver={(e) => handleDragOver(e, 'EMITIDA')}
               onDragLeave={() => handleDragLeave('EMITIDA')}
