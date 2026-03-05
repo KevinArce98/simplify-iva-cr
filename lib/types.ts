@@ -100,4 +100,5 @@ export type ParsedXMLInvoice = {
   subtotalExento: number;         // Total exento (IVA 0%)
   tarifaIVA: number;              // Tarifa predominante
   desgloseTarifas: DesgloseTarifa[]; // Desglose por tarifa
+  tipoCambio: number;             // Tipo de cambio del XML (1.0 para CRC)
 };

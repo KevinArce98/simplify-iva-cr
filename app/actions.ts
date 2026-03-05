@@ -1,7 +1,6 @@
 'use server';
 
 import { parseInvoiceXML } from '@/lib/xml-parser';
-import { getExchangeRate } from '@/lib/exchange-rate';
 import type { Currency, InvoiceType, UploadedFile } from '@/lib/types';
 import { prisma } from '@/lib/prisma';
 import type { Invoice } from '@prisma/client';
@@ -57,11 +56,8 @@ export async function processXMLFile(
       }
     }
 
-    // Get exchange rate if USD
-    let tipoCambio = 1.0;
-    if (parsed.moneda === 'USD') {
-      tipoCambio = await getExchangeRate(parsed.fecha);
-    }
+    // Use exchange rate from XML (already included in the parsed data)
+    const tipoCambio = parsed.tipoCambio;
 
     // Calculate IVA in CRC
     const ivaCRC = parsed.totalImpuesto * tipoCambio;

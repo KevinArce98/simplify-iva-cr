@@ -44,6 +44,30 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
     // Extract TotalComprobante
     const totalComprobante = parseFloat(factura.ResumenFactura?.TotalComprobante || '0');
 
+    // Extract TipoCambio from ResumenFactura.CodigoTipoMoneda
+    // For CRC invoices, this should be 1.0
+    // For USD invoices, this should contain the exchange rate (e.g., 497.49)
+    const tipoCambioXML = factura.ResumenFactura?.CodigoTipoMoneda?.TipoCambio;
+    let tipoCambio: number;
+    
+    if (moneda === 'CRC') {
+      // For CRC, always use 1.0
+      tipoCambio = 1.0;
+    } else if (moneda === 'USD') {
+      // For USD, require the exchange rate
+      if (!tipoCambioXML) {
+        throw new Error('Factura en USD debe incluir tipo de cambio (TipoCambio)');
+      }
+      tipoCambio = parseFloat(tipoCambioXML);
+      if (isNaN(tipoCambio) || tipoCambio <= 0) {
+        throw new Error(`Tipo de cambio inválido: ${tipoCambioXML}`);
+      }
+      console.log(`✓ Factura USD - Tipo de cambio extraído: ${tipoCambio}`);
+    } else {
+      // Shouldn't reach here due to earlier validation
+      tipoCambio = 1.0;
+    }
+
     // Extract emisor name
     const emisorNombre = factura.Emisor?.Nombre || factura.Emisor?.NombreComercial;
 
@@ -81,6 +105,7 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
       subtotalExento: subtotalExento || totalExento,
       tarifaIVA,
       desgloseTarifas,
+      tipoCambio,
     };
   } catch (error) {
     if (error instanceof Error) {
