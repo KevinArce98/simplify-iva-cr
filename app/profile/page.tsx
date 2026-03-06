@@ -88,20 +88,21 @@ export default async function ProfilePage({
         SET "taxId" = ${taxId}
         WHERE id = ${currentSession.user.id}
       `;
-
-      redirect('/profile?status=updated');
     } catch (error) {
       const errorCode =
         error && typeof error === 'object' && 'code' in error
           ? String((error as { code?: string }).code)
           : '';
 
-      if (errorCode === 'P2002') {
+      if (errorCode === 'P2002' || errorCode === '23505') {
         redirect('/profile?status=duplicate');
       }
 
+      console.error('Error actualizando taxId:', error);
       redirect('/profile?status=error');
     }
+
+    redirect('/profile?status=updated');
   }
 
   const params = await searchParams;

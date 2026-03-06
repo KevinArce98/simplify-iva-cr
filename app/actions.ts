@@ -8,6 +8,54 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { getIVADueDate, getMonthName } from '@/lib/utils';
 
+function normalizeTaxId(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.replace(/[^\p{L}\p{N}]/gu, '').toUpperCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function inferInvoiceTypeFromTaxId(
+  taxId: string | null | undefined,
+  emisorId: string | undefined,
+  receptorId: string | undefined
+): InvoiceType | null {
+  const normalizedUserTaxId = normalizeTaxId(taxId);
+  const normalizedIssuerTaxId = normalizeTaxId(emisorId);
+  const normalizedReceiverTaxId = normalizeTaxId(receptorId);
+
+  if (!normalizedUserTaxId) {
+    return null;
+  }
+
+  if (normalizedReceiverTaxId && normalizedReceiverTaxId === normalizedUserTaxId) {
+    return 'GASTO';
+  }
+
+  if (normalizedIssuerTaxId && normalizedIssuerTaxId === normalizedUserTaxId) {
+    return 'EMITIDA';
+  }
+
+  return null;
+}
+
+async function getUserTaxId(userId: string): Promise<string | null> {
+  try {
+    const rows = await prisma.$queryRaw<{ taxId: string | null }[]>`
+      SELECT "taxId"
+      FROM "User"
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+
+    return rows[0]?.taxId ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type ProcessFileResult = {
   success: boolean;
   file: UploadedFile;
@@ -65,6 +113,14 @@ export async function processXMLFile(
       }
     }
 
+    const userTaxId = await getUserTaxId(currentUser.id);
+    const inferredTipo = inferInvoiceTypeFromTaxId(
+      userTaxId,
+      parsed.emisor?.identificacion,
+      parsed.receptor?.identificacion
+    );
+    const resolvedTipo = inferredTipo || tipo;
+
     // Use exchange rate from XML (already included in the parsed data)
     const tipoCambio = parsed.tipoCambio;
 
@@ -79,7 +135,7 @@ export async function processXMLFile(
       data: {
         userId: currentUser.id,
         fileName,
-        tipo,
+        tipo: resolvedTipo,
         numeroConsecutivo: parsed.numeroConsecutivo,
         clave: parsed.clave,
         fechaEmision: new Date(parsed.fecha),
@@ -98,12 +154,13 @@ export async function processXMLFile(
     });
 
     uploadedFile.status = 'SUCCESS';
+    uploadedFile.tipo = resolvedTipo;
     uploadedFile.invoice = {
       id: invoice.id,
       tipo: invoice.tipo as InvoiceType,
       fecha: invoice.fechaEmision?.toISOString() || new Date().toISOString(),
-      proveedor: tipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-      cliente: tipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
+      proveedor: resolvedTipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
+      cliente: resolvedTipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
       numeroFactura: invoice.numeroConsecutivo || undefined,
       moneda: (invoice.tipoMoneda as Currency) || 'CRC',
       ivaOriginal: invoice.totalImpuesto || 0,
