@@ -18,12 +18,14 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
   try {
     const result = parser.parse(xmlContent);
 
+    const documentNode = getDocumentNode(result);
+
     // Navigate the XML structure for FacturaElectronica
-    const factura = result?.FacturaElectronica;
-    
-    if (!factura) {
+    if (!documentNode || documentNode.type !== 'FacturaElectronica') {
       throw new Error('Documento no es una FacturaElectronica válida');
     }
+
+    const factura = documentNode.node;
 
     // Extract date (FechaEmision)
     const fecha = factura.FechaEmision;
@@ -256,9 +258,35 @@ export function getDocumentType(xmlContent: string): string | null {
   const parser = new XMLParser();
   try {
     const result = parser.parse(xmlContent);
-    const keys = Object.keys(result);
-    return keys[0] || null;
+    return getDocumentNode(result)?.type || null;
   } catch {
     return null;
   }
+}
+
+function getDocumentNode(
+  parsedXML: unknown
+): { type: string; node: any } | null {
+  if (!parsedXML || typeof parsedXML !== 'object') {
+    return null;
+  }
+
+  const entries = Object.entries(parsedXML as Record<string, unknown>);
+
+  for (const [key, value] of entries) {
+    // Skip declaration nodes like ?xml
+    if (key.startsWith('?')) {
+      continue;
+    }
+
+    // Normalize namespace prefixes (e.g. ns:FacturaElectronica)
+    const normalizedType = key.includes(':') ? key.split(':').pop() || key : key;
+
+    return {
+      type: normalizedType,
+      node: value,
+    };
+  }
+
+  return null;
 }
