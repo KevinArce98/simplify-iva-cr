@@ -14,6 +14,7 @@ model User {
   id            String    @id @default(cuid())
   email         String    @unique
   invoiceEmail  String?   @unique
+  taxId         String?   @unique
   password      String
   name          String?
   saldoAFavor   Float     @default(0)  // Saldo a favor acumulado de períodos anteriores

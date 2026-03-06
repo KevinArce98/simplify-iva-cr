@@ -9,6 +9,7 @@ import { signIn } from 'next-auth/react';
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [taxId, setTaxId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,7 +34,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const result = await registerUser({ email, password, name });
+      const result = await registerUser({ email, password, name, taxId });
 
       if (result.error) {
         setError(result.error);
@@ -122,6 +123,25 @@ export default function RegisterPage() {
                 required
                 className="w-full px-4 py-3 border border-[#d0d7e7] rounded-lg focus:outline-none focus:ring-2 focus:ring-(--primary) focus:border-transparent text-[#0e121b]"
                 placeholder="tu@email.com"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="taxId"
+                className="block text-sm font-medium text-[#0e121b] mb-2"
+              >
+                Identificación fiscal
+              </label>
+              <input
+                id="taxId"
+                type="text"
+                value={taxId}
+                onChange={(e) => setTaxId(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-[#d0d7e7] rounded-lg focus:outline-none focus:ring-2 focus:ring-(--primary) focus:border-transparent text-[#0e121b]"
+                placeholder="Ej: 3101123456"
                 disabled={isLoading}
               />
             </div>

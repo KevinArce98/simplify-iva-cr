@@ -1,6 +1,22 @@
 import { prisma } from './prisma';
 import { parseInvoiceXML, getDocumentType } from './xml-parser';
 import { extractUserIdFromInvoiceEmail, normalizeEmail } from './invoice-email';
+import type { InvoiceType, ParsedXMLInvoice } from './types';
+
+async function getUserTaxIdById(userId: string): Promise<string | null> {
+  try {
+    const rows = await prisma.$queryRaw<{ taxId: string | null }[]>`
+      SELECT "taxId"
+      FROM "User"
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+
+    return rows[0]?.taxId ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Represents an email attachment from Mailgun
@@ -60,7 +76,7 @@ export function extractRecipientEmail(recipient: string | string[]): string {
 /**
  * Finds user by email address
  */
-async function findUserByEmail(email: string): Promise<{ id: string } | null> {
+async function findUserByEmail(email: string): Promise<{ id: string; taxId: string | null } | null> {
   try {
     const normalizedEmail = normalizeEmail(email);
 
@@ -70,7 +86,10 @@ async function findUserByEmail(email: string): Promise<{ id: string } | null> {
     });
 
     if (userByAccountEmail) {
-      return userByAccountEmail;
+      return {
+        id: userByAccountEmail.id,
+        taxId: await getUserTaxIdById(userByAccountEmail.id),
+      };
     }
 
     const userIdFromInvoiceEmail = extractUserIdFromInvoiceEmail(normalizedEmail);
@@ -81,15 +100,18 @@ async function findUserByEmail(email: string): Promise<{ id: string } | null> {
       });
 
       if (userById) {
-        return userById;
+        return {
+          id: userById.id,
+          taxId: await getUserTaxIdById(userById.id),
+        };
       }
     }
 
-    let user: { id: string } | null = null;
+    let user: { id: string; taxId: string | null } | null = null;
 
     try {
-      const usersByInvoiceEmail = await prisma.$queryRaw<{ id: string }[]>`
-        SELECT id
+      const usersByInvoiceEmail = await prisma.$queryRaw<{ id: string; taxId: string | null }[]>`
+        SELECT id, "taxId"
         FROM "User"
         WHERE lower("invoiceEmail") = ${normalizedEmail}
         LIMIT 1
@@ -105,6 +127,35 @@ async function findUserByEmail(email: string): Promise<{ id: string } | null> {
     console.error(`Error finding user by email ${email}:`, error);
     return null;
   }
+}
+
+function normalizeTaxId(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.replace(/[^\p{L}\p{N}]/gu, '').toUpperCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function classifyInvoiceType(parsedInvoice: ParsedXMLInvoice, userTaxId: string | null | undefined): InvoiceType {
+  const normalizedUserTaxId = normalizeTaxId(userTaxId);
+  const normalizedIssuerTaxId = normalizeTaxId(parsedInvoice.emisor?.identificacion);
+  const normalizedReceiverTaxId = normalizeTaxId(parsedInvoice.receptor?.identificacion);
+
+  if (!normalizedUserTaxId) {
+    return 'GASTO';
+  }
+
+  if (normalizedReceiverTaxId && normalizedReceiverTaxId === normalizedUserTaxId) {
+    return 'GASTO';
+  }
+
+  if (normalizedIssuerTaxId && normalizedIssuerTaxId === normalizedUserTaxId) {
+    return 'EMITIDA';
+  }
+
+  return 'GASTO';
 }
 
 /**
@@ -182,6 +233,7 @@ async function isInvoiceDuplicate(clave: string): Promise<boolean> {
  */
 async function processXMLAttachment(
   userId: string,
+  userTaxId: string | null | undefined,
   filename: string,
   xmlContent: string
 ): Promise<AttachmentProcessingResult> {
@@ -219,6 +271,7 @@ async function processXMLAttachment(
     
     const invoiceDate = new Date(parsedInvoice.fecha);
     const exchangeRate = parsedInvoice.tipoCambio;
+    const tipo = classifyInvoiceType(parsedInvoice, userTaxId);
     
     // Extract detailed amounts from desglose if available
     let totalGravado = parsedInvoice.subtotalGravado;
@@ -243,12 +296,14 @@ async function processXMLAttachment(
       data: {
         userId,
         fileName: filename,
-        tipo: 'GASTO', // Inbound invoices are expenses
+        tipo,
         numeroConsecutivo: parsedInvoice.numeroConsecutivo,
         clave: parsedInvoice.clave,
         fechaEmision: invoiceDate,
         emisorNombre: parsedInvoice.emisor?.nombre,
+        emisorIdentificacion: parsedInvoice.emisor?.identificacion,
         receptorNombre: parsedInvoice.receptor?.nombre,
+        receptorIdentificacion: parsedInvoice.receptor?.identificacion,
         
         // Base amounts for Hacienda declaration
         subtotalGravado: parsedInvoice.subtotalGravado,
@@ -341,6 +396,7 @@ export async function processInboundEmail(
         // Process XML
         const result = await processXMLAttachment(
           user.id,
+          user.taxId,
           attachment.filename,
           xmlContent
         );

@@ -8,8 +8,15 @@ export async function registerUser(formData: {
   email: string;
   password: string;
   name: string;
+  taxId: string;
 }) {
   try {
+    const taxId = formData.taxId.trim();
+
+    if (!taxId) {
+      return { error: 'La identificación fiscal es obligatoria' };
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizeEmail(formData.email) },
@@ -32,6 +39,12 @@ export async function registerUser(formData: {
     });
 
     try {
+      await prisma.$executeRaw`
+        UPDATE "User"
+        SET "taxId" = ${taxId}
+        WHERE id = ${user.id}
+      `;
+
       const invoiceEmail = buildInvoiceEmailForUserId(user.id);
       await prisma.$executeRaw`
         UPDATE "User"

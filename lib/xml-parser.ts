@@ -1,6 +1,16 @@
 import { XMLParser } from 'fast-xml-parser';
 import type { Currency, ParsedXMLInvoice, LineaDetalle, DesgloseTarifa } from './types';
 
+function extractIdentification(personNode: any): string | undefined {
+  const numero = personNode?.Identificacion?.Numero;
+  if (numero === undefined || numero === null) {
+    return undefined;
+  }
+
+  const normalized = String(numero).trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 /**
  * Parses Costa Rica electronic invoice XML (v4.4)
  * Supports: FacturaElectronica
@@ -72,9 +82,11 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
 
     // Extract emisor name
     const emisorNombre = factura.Emisor?.Nombre || factura.Emisor?.NombreComercial;
+    const emisorIdentificacion = extractIdentification(factura.Emisor);
 
     // Extract receptor name
     const receptorNombre = factura.Receptor?.Nombre || factura.Receptor?.NombreComercial;
+    const receptorIdentificacion = extractIdentification(factura.Receptor);
 
     // Extract numero consecutivo
     const numeroConsecutivo = factura.NumeroConsecutivo ? String(factura.NumeroConsecutivo) : undefined;
@@ -96,9 +108,11 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
       totalComprobante,
       emisor: {
         nombre: emisorNombre,
+        identificacion: emisorIdentificacion,
       },
       receptor: {
         nombre: receptorNombre,
+        identificacion: receptorIdentificacion,
       },
       numeroConsecutivo,
       clave,

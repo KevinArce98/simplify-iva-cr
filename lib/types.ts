@@ -89,9 +89,11 @@ export type ParsedXMLInvoice = {
   totalComprobante: number;
   emisor?: {
     nombre?: string;
+    identificacion?: string;
   };
   receptor?: {
     nombre?: string;
+    identificacion?: string;
   };
   numeroConsecutivo?: string;
   clave?: string;
