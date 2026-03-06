@@ -13,6 +13,8 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
+  invoiceEmail  String?   @unique
+  taxId         String?   @unique
   password      String
   name          String?
   saldoAFavor   Float     @default(0)  // Saldo a favor acumulado de períodos anteriores
@@ -72,4 +74,25 @@ model Invoice {
   @@index([userId])
   @@index([tipo])
   @@index([fechaEmision])
+}
+
+model EmailLog {
+  id                String   @id @default(cuid())
+  messageId         String   @unique  // Email Message-Id from Mailgun
+  sender            String              // Email sender
+  recipient         String              // Email recipient (mapped to user)
+  subject           String              // Email subject
+  attachmentCount   Int      @default(0) // Total attachments received
+  processedCount    Int      @default(0) // Successfully processed attachments
+  skippedCount      Int      @default(0) // Skipped attachments (PDFs, duplicates, etc)
+  failedCount       Int      @default(0) // Failed attachments
+  success           Boolean  @default(false) // Overall success status
+  errorMessage      String?             // Error message if failed
+  processingTimeMs  Int?                // Processing time in milliseconds
+  userId            String?             // Associated user (if found)
+  createdAt         DateTime @default(now())
+  
+  @@index([recipient])
+  @@index([userId])
+  @@index([createdAt])
 }

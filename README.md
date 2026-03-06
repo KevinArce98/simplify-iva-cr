@@ -10,7 +10,7 @@ Production-ready web application for calculating monthly IVA (VAT) for independe
   - Facturas Emitidas (Issued Invoices) - IVA Débito
 - **Automatic Processing**:
   - Server-side XML parsing
-  - Exchange rate fetching from BCCR (Banco Central de Costa Rica)
+  - Exchange rate extraction from XML
   - USD to CRC conversion
   - IVA calculations
 - **Reports Dashboard**:
@@ -42,40 +42,23 @@ Production-ready web application for calculating monthly IVA (VAT) for independe
 /lib
   /types.ts             # TypeScript type definitions
   /xml-parser.ts        # XML parsing utilities
-  /exchange-rate.ts     # BCCR exchange rate service
   /store.ts             # In-memory invoice store
   /utils.ts             # Formatting utilities
 ```
 
 ## Getting Started
 
-1. **Configure BCCR API credentials**:
-   
-   Create a `.env` file in the root directory:
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Then update with your BCCR credentials:
-   ```env
-   BCCR_EMAIL=tu-email@example.com
-   BCCR_TOKEN=tu-token-aqui
-   BCCR_NAME=Tu Nombre
-   ```
-   
-   > **Obtén tus credenciales BCCR**: Regístrate en [https://gee.bccr.fi.cr/Indicadores/Suscripciones/](https://gee.bccr.fi.cr/Indicadores/Suscripciones/)
-
-2. **Install dependencies**:
+1. **Install dependencies**:
    ```bash
    pnpm install
    ```
 
-3. **Run development server**:
+2. **Run development server**:
    ```bash
    pnpm dev
    ```
 
-4. **Open browser**:
+3. **Open browser**:
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## Usage
@@ -122,10 +105,9 @@ type Invoice = {
 
 ## Tax Calculation Logic
 
-1. **Parse XML**: Extract invoice data (date, currency, IVA amount)
-2. **Exchange Rate**: Fetch BCCR rate if currency is USD
-3. **Convert to CRC**: Multiply IVA by exchange rate
-4. **Calculate**:
+1. **Parse XML**: Extract invoice data (date, currency, IVA amount, exchange rate)
+2. **Convert to CRC**: Multiply IVA by exchange rate from XML
+3. **Calculate**:
    - IVA Débito = Sum of IVA from EMITIDA invoices
    - IVA Crédito = Sum of IVA from GASTO invoices
    - IVA a Pagar = IVA Débito - IVA Crédito
@@ -134,17 +116,7 @@ type Invoice = {
 
 ### Exchange Rates
 
-The application fetches **real-time exchange rates** from BCCR Web Service:
-
-- **Endpoint**: `https://gee.bccr.fi.cr/Indicadores/Suscripciones/WS/wsindicadoreseconomicos.asmx/ObtenerIndicadoresEconomicos`
-- **Indicator**: 318 (Tipo de cambio de venta USD)
-- **Caching**: One API call per date (in-memory cache)
-- **Fallback**: If API fails, uses approximate historical rates
-
-**Configuration required**:
-1. Register at [BCCR Suscripciones](https://gee.bccr.fi.cr/Indicadores/Suscripciones/)
-2. Add credentials to `.env` file
-3. The app will automatically use the real API
+The application uses the **exchange rate included in each XML invoice** (field `ResumenFactura.TipoCambio`). This ensures accuracy as it uses the same rate that was applied when the invoice was issued.
 
 ### Data Storage
 
@@ -189,7 +161,6 @@ For production deployment:
 - `pnpm build` - Build for production
 - `pnpm start` - Start production server
 - `pnpm lint` - Run ESLint
-- `pnpm test:bccr` - Test BCCR API integration
 
 ## License
 

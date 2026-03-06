@@ -1,13 +1,60 @@
 'use server';
 
 import { parseInvoiceXML } from '@/lib/xml-parser';
-import { getExchangeRate } from '@/lib/exchange-rate';
 import type { Currency, InvoiceType, UploadedFile } from '@/lib/types';
 import { prisma } from '@/lib/prisma';
 import type { Invoice } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { getIVADueDate, getMonthName } from '@/lib/utils';
+
+function normalizeTaxId(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.replace(/[^\p{L}\p{N}]/gu, '').toUpperCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function inferInvoiceTypeFromTaxId(
+  taxId: string | null | undefined,
+  emisorId: string | undefined,
+  receptorId: string | undefined
+): InvoiceType | null {
+  const normalizedUserTaxId = normalizeTaxId(taxId);
+  const normalizedIssuerTaxId = normalizeTaxId(emisorId);
+  const normalizedReceiverTaxId = normalizeTaxId(receptorId);
+
+  if (!normalizedUserTaxId) {
+    return null;
+  }
+
+  if (normalizedReceiverTaxId && normalizedReceiverTaxId === normalizedUserTaxId) {
+    return 'GASTO';
+  }
+
+  if (normalizedIssuerTaxId && normalizedIssuerTaxId === normalizedUserTaxId) {
+    return 'EMITIDA';
+  }
+
+  return null;
+}
+
+async function getUserTaxId(userId: string): Promise<string | null> {
+  try {
+    const rows = await prisma.$queryRaw<{ taxId: string | null }[]>`
+      SELECT "taxId"
+      FROM "User"
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+
+    return rows[0]?.taxId ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export type ProcessFileResult = {
   success: boolean;
@@ -26,6 +73,15 @@ export async function processXMLFile(
 
   if (!session?.user?.id) {
     throw new Error('Usuario no autenticado');
+  }
+
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true },
+  });
+
+  if (!currentUser) {
+    throw new Error('Tu sesión ya no es válida para esta base de datos. Cierra sesión e inicia sesión nuevamente.');
   }
 
   const fileId = crypto.randomUUID();
@@ -57,11 +113,16 @@ export async function processXMLFile(
       }
     }
 
-    // Get exchange rate if USD
-    let tipoCambio = 1.0;
-    if (parsed.moneda === 'USD') {
-      tipoCambio = await getExchangeRate(parsed.fecha);
-    }
+    const userTaxId = await getUserTaxId(currentUser.id);
+    const inferredTipo = inferInvoiceTypeFromTaxId(
+      userTaxId,
+      parsed.emisor?.identificacion,
+      parsed.receptor?.identificacion
+    );
+    const resolvedTipo = inferredTipo || tipo;
+
+    // Use exchange rate from XML (already included in the parsed data)
+    const tipoCambio = parsed.tipoCambio;
 
     // Calculate IVA in CRC
     const ivaCRC = parsed.totalImpuesto * tipoCambio;
@@ -72,14 +133,16 @@ export async function processXMLFile(
     // Save to database
     const invoice = await prisma.invoice.create({
       data: {
-        userId: session.user.id,
+        userId: currentUser.id,
         fileName,
-        tipo,
+        tipo: resolvedTipo,
         numeroConsecutivo: parsed.numeroConsecutivo,
         clave: parsed.clave,
         fechaEmision: new Date(parsed.fecha),
         emisorNombre: parsed.emisor?.nombre,
+        emisorIdentificacion: parsed.emisor?.identificacion,
         receptorNombre: parsed.receptor?.nombre,
+        receptorIdentificacion: parsed.receptor?.identificacion,
         totalImpuesto: parsed.totalImpuesto,
         totalComprobante: parsed.totalComprobante,
         subtotalGravado: parsed.subtotalGravado,
@@ -91,12 +154,13 @@ export async function processXMLFile(
     });
 
     uploadedFile.status = 'SUCCESS';
+    uploadedFile.tipo = resolvedTipo;
     uploadedFile.invoice = {
       id: invoice.id,
       tipo: invoice.tipo as InvoiceType,
       fecha: invoice.fechaEmision?.toISOString() || new Date().toISOString(),
-      proveedor: tipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-      cliente: tipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
+      proveedor: resolvedTipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
+      cliente: resolvedTipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
       numeroFactura: invoice.numeroConsecutivo || undefined,
       moneda: (invoice.tipoMoneda as Currency) || 'CRC',
       ivaOriginal: invoice.totalImpuesto || 0,

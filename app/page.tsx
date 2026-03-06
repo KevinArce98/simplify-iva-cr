@@ -6,6 +6,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { redirect } from 'next/navigation';
 import HomePeriodSelector from './components/home-period-selector';
+import InvoiceEmailBox from '@/app/components/invoice-email-box';
+import { buildInvoiceEmailForUserId } from '@/lib/invoice-email';
 
 export default async function HomePage({
   searchParams,
@@ -26,6 +28,7 @@ export default async function HomePage({
 
   const summary = await getTaxSummary(currentMonth, currentYear);
   const recentInvoices = await getRecentInvoices();
+  const invoiceEmail = buildInvoiceEmailForUserId(session.user.id);
 
   return (
     <>
@@ -124,6 +127,8 @@ export default async function HomePage({
                 </div>
               </Link>
             </div>
+
+            {invoiceEmail && <InvoiceEmailBox invoiceEmail={invoiceEmail} />}
 
             {/* Summary Section */}
             <div className="flex flex-col gap-4">

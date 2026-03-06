@@ -89,9 +89,11 @@ export type ParsedXMLInvoice = {
   totalComprobante: number;
   emisor?: {
     nombre?: string;
+    identificacion?: string;
   };
   receptor?: {
     nombre?: string;
+    identificacion?: string;
   };
   numeroConsecutivo?: string;
   clave?: string;
@@ -100,4 +102,5 @@ export type ParsedXMLInvoice = {
   subtotalExento: number;         // Total exento (IVA 0%)
   tarifaIVA: number;              // Tarifa predominante
   desgloseTarifas: DesgloseTarifa[]; // Desglose por tarifa
+  tipoCambio: number;             // Tipo de cambio del XML (1.0 para CRC)
 };

@@ -29,6 +29,11 @@ export function Sidebar() {
       icon: 'bar_chart',
       label: 'Declaraciones',
     },
+    {
+      href: '/profile',
+      icon: 'person',
+      label: 'Perfil',
+    },
   ];
 
   return (

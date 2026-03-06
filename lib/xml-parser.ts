@@ -1,6 +1,16 @@
 import { XMLParser } from 'fast-xml-parser';
 import type { Currency, ParsedXMLInvoice, LineaDetalle, DesgloseTarifa } from './types';
 
+function extractIdentification(personNode: any): string | undefined {
+  const numero = personNode?.Identificacion?.Numero;
+  if (numero === undefined || numero === null) {
+    return undefined;
+  }
+
+  const normalized = String(numero).trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 /**
  * Parses Costa Rica electronic invoice XML (v4.4)
  * Supports: FacturaElectronica
@@ -18,12 +28,14 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
   try {
     const result = parser.parse(xmlContent);
 
+    const documentNode = getDocumentNode(result);
+
     // Navigate the XML structure for FacturaElectronica
-    const factura = result?.FacturaElectronica;
-    
-    if (!factura) {
+    if (!documentNode || documentNode.type !== 'FacturaElectronica') {
       throw new Error('Documento no es una FacturaElectronica válida');
     }
+
+    const factura = documentNode.node;
 
     // Extract date (FechaEmision)
     const fecha = factura.FechaEmision;
@@ -44,11 +56,37 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
     // Extract TotalComprobante
     const totalComprobante = parseFloat(factura.ResumenFactura?.TotalComprobante || '0');
 
+    // Extract TipoCambio from ResumenFactura.CodigoTipoMoneda
+    // For CRC invoices, this should be 1.0
+    // For USD invoices, this should contain the exchange rate (e.g., 497.49)
+    const tipoCambioXML = factura.ResumenFactura?.CodigoTipoMoneda?.TipoCambio;
+    let tipoCambio: number;
+    
+    if (moneda === 'CRC') {
+      // For CRC, always use 1.0
+      tipoCambio = 1.0;
+    } else if (moneda === 'USD') {
+      // For USD, require the exchange rate
+      if (!tipoCambioXML) {
+        throw new Error('Factura en USD debe incluir tipo de cambio (TipoCambio)');
+      }
+      tipoCambio = parseFloat(tipoCambioXML);
+      if (isNaN(tipoCambio) || tipoCambio <= 0) {
+        throw new Error(`Tipo de cambio inválido: ${tipoCambioXML}`);
+      }
+      console.log(`✓ Factura USD - Tipo de cambio extraído: ${tipoCambio}`);
+    } else {
+      // Shouldn't reach here due to earlier validation
+      tipoCambio = 1.0;
+    }
+
     // Extract emisor name
     const emisorNombre = factura.Emisor?.Nombre || factura.Emisor?.NombreComercial;
+    const emisorIdentificacion = extractIdentification(factura.Emisor);
 
     // Extract receptor name
     const receptorNombre = factura.Receptor?.Nombre || factura.Receptor?.NombreComercial;
+    const receptorIdentificacion = extractIdentification(factura.Receptor);
 
     // Extract numero consecutivo
     const numeroConsecutivo = factura.NumeroConsecutivo ? String(factura.NumeroConsecutivo) : undefined;
@@ -70,9 +108,11 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
       totalComprobante,
       emisor: {
         nombre: emisorNombre,
+        identificacion: emisorIdentificacion,
       },
       receptor: {
         nombre: receptorNombre,
+        identificacion: receptorIdentificacion,
       },
       numeroConsecutivo,
       clave,
@@ -81,6 +121,7 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
       subtotalExento: subtotalExento || totalExento,
       tarifaIVA,
       desgloseTarifas,
+      tipoCambio,
     };
   } catch (error) {
     if (error instanceof Error) {
@@ -231,9 +272,35 @@ export function getDocumentType(xmlContent: string): string | null {
   const parser = new XMLParser();
   try {
     const result = parser.parse(xmlContent);
-    const keys = Object.keys(result);
-    return keys[0] || null;
+    return getDocumentNode(result)?.type || null;
   } catch {
     return null;
   }
+}
+
+function getDocumentNode(
+  parsedXML: unknown
+): { type: string; node: any } | null {
+  if (!parsedXML || typeof parsedXML !== 'object') {
+    return null;
+  }
+
+  const entries = Object.entries(parsedXML as Record<string, unknown>);
+
+  for (const [key, value] of entries) {
+    // Skip declaration nodes like ?xml
+    if (key.startsWith('?')) {
+      continue;
+    }
+
+    // Normalize namespace prefixes (e.g. ns:FacturaElectronica)
+    const normalizedType = key.includes(':') ? key.split(':').pop() || key : key;
+
+    return {
+      type: normalizedType,
+      node: value,
+    };
+  }
+
+  return null;
 }
