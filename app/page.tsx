@@ -6,7 +6,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { redirect } from 'next/navigation';
 import HomePeriodSelector from './components/home-period-selector';
-import InvoiceEmailBox from './components/invoice-email-box';
+import InvoiceEmailBox from '@/app/components/invoice-email-box';
 import { buildInvoiceEmailForUserId } from '@/lib/invoice-email';
 
 export default async function HomePage({

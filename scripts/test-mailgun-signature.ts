@@ -40,8 +40,10 @@ if (!signingKey) {
   process.exit(1);
 }
 
+const resolvedSigningKey = signingKey;
+
 console.log('🔐 Testing Mailgun webhook signature validation\n');
-console.log(`Signing key: ${signingKey.substring(0, 10)}...${signingKey.substring(signingKey.length - 10)}\n`);
+console.log(`Signing key: ${resolvedSigningKey.substring(0, 10)}...${resolvedSigningKey.substring(resolvedSigningKey.length - 10)}\n`);
 
 // Generate test data
 const timestamp = String(Math.floor(Date.now() / 1000));
@@ -53,7 +55,7 @@ console.log(`  Token: ${token}\n`);
 
 // Create signature
 const encodedData = timestamp + token;
-const hmac = crypto.createHmac('sha256', signingKey);
+const hmac = crypto.createHmac('sha256', resolvedSigningKey);
 hmac.update(encodedData);
 const signature = hmac.digest('hex');
 
@@ -62,7 +64,7 @@ console.log(`Generated signature: ${signature}\n`);
 // Validate signature (like the webhook does)
 function validateSignature(ts: string, tkn: string, sig: string): boolean {
   const data = ts + tkn;
-  const hmac = crypto.createHmac('sha256', signingKey);
+  const hmac = crypto.createHmac('sha256', resolvedSigningKey);
   hmac.update(data);
   const computed = hmac.digest('hex');
   

@@ -31,12 +31,16 @@ export async function registerUser(formData: {
       },
     });
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        invoiceEmail: buildInvoiceEmailForUserId(user.id),
-      },
-    });
+    try {
+      const invoiceEmail = buildInvoiceEmailForUserId(user.id);
+      await prisma.$executeRaw`
+        UPDATE "User"
+        SET "invoiceEmail" = ${invoiceEmail}
+        WHERE id = ${user.id}
+      `;
+    } catch (invoiceEmailUpdateError) {
+      console.warn('Could not persist invoiceEmail during registration:', invoiceEmailUpdateError);
+    }
 
     return { success: true, userId: user.id };
     
