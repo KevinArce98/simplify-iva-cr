@@ -188,13 +188,17 @@ async function processXMLAttachment(
   try {
     // Check document type
     const docType = getDocumentType(xmlContent);
-    
-    // Ignore MensajeReceptor documents
-    if (docType === 'MensajeReceptor') {
+
+    // Only process electronic invoice documents
+    if (docType !== 'FacturaElectronica') {
+      const reason = docType
+        ? `${docType} documents are not supported`
+        : 'Unknown XML document type';
+
       return {
         filename,
         status: 'skipped',
-        reason: 'MensajeReceptor documents are not supported',
+        reason,
       };
     }
     

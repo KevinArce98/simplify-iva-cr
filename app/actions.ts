@@ -27,6 +27,15 @@ export async function processXMLFile(
     throw new Error('Usuario no autenticado');
   }
 
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true },
+  });
+
+  if (!currentUser) {
+    throw new Error('Tu sesión ya no es válida para esta base de datos. Cierra sesión e inicia sesión nuevamente.');
+  }
+
   const fileId = crypto.randomUUID();
 
   const uploadedFile: UploadedFile = {
@@ -68,7 +77,7 @@ export async function processXMLFile(
     // Save to database
     const invoice = await prisma.invoice.create({
       data: {
-        userId: session.user.id,
+        userId: currentUser.id,
         fileName,
         tipo,
         numeroConsecutivo: parsed.numeroConsecutivo,
