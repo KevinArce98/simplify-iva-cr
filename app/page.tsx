@@ -23,8 +23,16 @@ export default async function HomePage({
   // Default to current month or use search params
   const params = await searchParams;
   const now = new Date();
-  const currentMonth = params.mes ? parseInt(params.mes) : now.getMonth() + 1;
-  const currentYear = params.año ? parseInt(params.año) : now.getFullYear();
+  const parsedMonth = params.mes ? Number.parseInt(params.mes, 10) : NaN;
+  const parsedYear = params.año ? Number.parseInt(params.año, 10) : NaN;
+  const currentMonth =
+    Number.isInteger(parsedMonth) && parsedMonth >= 1 && parsedMonth <= 12
+      ? parsedMonth
+      : now.getMonth() + 1;
+  const currentYear =
+    Number.isInteger(parsedYear) && parsedYear >= 2000 && parsedYear <= 2100
+      ? parsedYear
+      : now.getFullYear();
 
   const summary = await getTaxSummary(currentMonth, currentYear);
   const recentInvoices = await getRecentInvoices();

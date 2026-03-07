@@ -22,6 +22,15 @@ function encryptedNumber(value: unknown, fallback = 0): number {
   return decryptEncryptedNumber(value) ?? fallback;
 }
 
+function normalizePeriod(mes: number, año: number): { mes: number; año: number } {
+  const now = new Date();
+  const safeMes = Number.isInteger(mes) && mes >= 1 && mes <= 12 ? mes : now.getMonth() + 1;
+  const safeAño =
+    Number.isInteger(año) && año >= 2000 && año <= 2100 ? año : now.getFullYear();
+
+  return { mes: safeMes, año: safeAño };
+}
+
 function normalizeTaxId(value: string | null | undefined): string | null {
   if (!value) {
     return null;
@@ -274,8 +283,9 @@ export async function getInvoicesByPeriod(mes: number, año: number) {
     return [];
   }
 
-  const startDate = new Date(año, mes - 1, 1);
-  const endDate = new Date(año, mes, 0, 23, 59, 59);
+  const period = normalizePeriod(mes, año);
+  const startDate = new Date(period.año, period.mes - 1, 1);
+  const endDate = new Date(period.año, period.mes, 0, 23, 59, 59);
 
   const invoices = await prisma.invoice.findMany({
     where: {
@@ -299,9 +309,10 @@ export async function getInvoicesByPeriod(mes: number, año: number) {
  */
 export async function getTaxSummary(mes: number, año: number) {
   const session = await getServerSession(authOptions);
+  const period = normalizePeriod(mes, año);
 
   // Calculate dates and due date info
-  const dueDate = getIVADueDate(mes, año);
+  const dueDate = getIVADueDate(period.mes, period.año);
   const today = new Date();
   const diffTime = dueDate.getTime() - today.getTime();
   const diasHastaVencimiento = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -312,9 +323,9 @@ export async function getTaxSummary(mes: number, año: number) {
     ivaDebito: 0,
     ivaCredito: 0,
     ivaAPagar: 0,
-    periodo: `${getMonthName(mes)} ${año}`,
-    mes,
-    año,
+    periodo: `${getMonthName(period.mes)} ${period.año}`,
+    mes: period.mes,
+    año: period.año,
     fechaVencimiento: dueDate,
     diasHastaVencimiento: Math.max(0, diasHastaVencimiento),
     estaProximoVencimiento,
@@ -334,8 +345,8 @@ export async function getTaxSummary(mes: number, año: number) {
     return defaultSummary;
   }
 
-  const startDate = new Date(año, mes - 1, 1);
-  const endDate = new Date(año, mes, 0, 23, 59, 59);
+  const startDate = new Date(period.año, period.mes - 1, 1);
+  const endDate = new Date(period.año, period.mes, 0, 23, 59, 59);
 
   const invoices = await prisma.invoice.findMany({
     where: {
@@ -431,9 +442,9 @@ export async function getTaxSummary(mes: number, año: number) {
     ivaDebito: ivaVentas,
     ivaCredito: ivaCompras,
     ivaAPagar: ivaPagar,
-    periodo: `${getMonthName(mes)} ${año}`,
-    mes,
-    año,
+    periodo: `${getMonthName(period.mes)} ${period.año}`,
+    mes: period.mes,
+    año: period.año,
     fechaVencimiento: dueDate,
     diasHastaVencimiento: Math.max(0, diasHastaVencimiento),
     estaProximoVencimiento,
