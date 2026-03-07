@@ -6,15 +6,19 @@ function getInvoiceDomain() {
     .toLowerCase();
 }
 
-export function buildInvoiceEmailForUserId(userId: string): string {
-  return `facturas-${userId}@${getInvoiceDomain()}`;
+export function normalizeTaxIdForEmail(taxId: string): string {
+  return taxId.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+export function buildInvoiceEmailForTaxId(taxId: string): string {
+  return `facturas-${normalizeTaxIdForEmail(taxId)}@${getInvoiceDomain()}`;
 }
 
 export function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function extractUserIdFromInvoiceEmail(value: string): string | null {
+export function extractInvoiceEmailToken(value: string): string | null {
   const normalized = normalizeEmail(value);
   const [localPart] = normalized.split('@');
 
@@ -22,6 +26,6 @@ export function extractUserIdFromInvoiceEmail(value: string): string | null {
     return null;
   }
 
-  const userId = localPart.slice('facturas-'.length);
-  return userId || null;
+  const token = localPart.slice('facturas-'.length);
+  return token || null;
 }

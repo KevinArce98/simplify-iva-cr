@@ -7,7 +7,8 @@ import { authOptions } from '@/auth';
 import { redirect } from 'next/navigation';
 import HomePeriodSelector from './components/home-period-selector';
 import InvoiceEmailBox from '@/app/components/invoice-email-box';
-import { buildInvoiceEmailForUserId } from '@/lib/invoice-email';
+import { prisma } from '@/lib/prisma';
+import { buildInvoiceEmailForTaxId } from '@/lib/invoice-email';
 
 export default async function HomePage({
   searchParams,
@@ -36,7 +37,24 @@ export default async function HomePage({
 
   const summary = await getTaxSummary(currentMonth, currentYear);
   const recentInvoices = await getRecentInvoices();
-  const invoiceEmail = buildInvoiceEmailForUserId(session.user.id);
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { invoiceEmail: true, taxId: true },
+  });
+
+  let invoiceEmail = user?.invoiceEmail || null;
+
+  if (user?.taxId) {
+    const expectedInvoiceEmail = buildInvoiceEmailForTaxId(user.taxId);
+
+    if (invoiceEmail !== expectedInvoiceEmail) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { invoiceEmail: expectedInvoiceEmail },
+      });
+      invoiceEmail = expectedInvoiceEmail;
+    }
+  }
 
   return (
     <>

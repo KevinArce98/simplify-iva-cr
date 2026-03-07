@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import { parseInvoiceXML, getDocumentType } from './xml-parser';
-import { extractUserIdFromInvoiceEmail, normalizeEmail } from './invoice-email';
+import { extractInvoiceEmailToken, normalizeEmail } from './invoice-email';
 import type { InvoiceType, ParsedXMLInvoice } from './types';
 import { encryptNullableNumber, encryptNullableString } from './crypto';
 
@@ -93,18 +93,17 @@ async function findUserByEmail(email: string): Promise<{ id: string; taxId: stri
       };
     }
 
-    const userIdFromInvoiceEmail = extractUserIdFromInvoiceEmail(normalizedEmail);
-    if (userIdFromInvoiceEmail) {
-      const userById = await prisma.user.findUnique({
-        where: { id: userIdFromInvoiceEmail },
-        select: { id: true },
-      });
+    const invoiceEmailToken = extractInvoiceEmailToken(normalizedEmail);
+    if (invoiceEmailToken) {
+      const usersByTaxIdToken = await prisma.$queryRaw<{ id: string; taxId: string | null }[]>`
+        SELECT id, "taxId"
+        FROM "User"
+        WHERE lower(regexp_replace(COALESCE("taxId", ''), '[^a-zA-Z0-9]', '', 'g')) = ${invoiceEmailToken}
+        LIMIT 1
+      `;
 
-      if (userById) {
-        return {
-          id: userById.id,
-          taxId: await getUserTaxIdById(userById.id),
-        };
+      if (usersByTaxIdToken[0]) {
+        return usersByTaxIdToken[0];
       }
     }
 
