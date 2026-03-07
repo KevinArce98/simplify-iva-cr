@@ -240,12 +240,12 @@ export function InvoicesTable({
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
-                          invoice.tipo === 'EMITIDA'
+                          invoice.tipo === 'GASTO'
                             ? 'bg-(--primary)/10 text-(--primary) ring-(--primary)/20'
                             : 'bg-green-50 text-green-700 ring-green-600/20'
                         }`}
                       >
-                        {invoice.tipo === 'EMITIDA' ? 'Venta' : 'Compra'}
+                        {invoice.tipo === 'GASTO' ? 'Compra' : 'Venta'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-mono text-gray-900 bg-blue-50/30">

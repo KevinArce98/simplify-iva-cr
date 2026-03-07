@@ -33,36 +33,22 @@ model Invoice {
   tipo              String   // 'GASTO' o 'EMITIDA'
   
   // Invoice details
-  numeroConsecutivo String?
-  clave             String?  @unique
+  numeroConsecutivoEncrypted Json?
+  clave             String?
   fechaEmision      DateTime?
-  emisorNombre      String?
-  emisorIdentificacion String?
-  receptorNombre    String?
-  receptorIdentificacion String?
+  emisorNombreEncrypted Json?
+  emisorIdentificacionEncrypted Json?
+  receptorNombreEncrypted Json?
+  receptorIdentificacionEncrypted Json?
   
   // Amounts - Base amounts (subtotals) for Hacienda declaration
-  subtotalGravado   Float?   @default(0)  // Base imponible para IVA (suma de bases con tarifa > 0)
-  subtotalExento    Float?   @default(0)  // Total sin IVA (tarifa 0%)
+  subtotalGravadoEncrypted Json?
+  subtotalExentoEncrypted Json?
   tarifaIVA         Float?   @default(13) // Tarifa de IVA predominante de la factura
   
-  // Original detailed amounts from XML
-  totalServGravados Float?   @default(0)
-  totalServExentos  Float?   @default(0)
-  totalServExonerado Float?  @default(0)
-  totalMercanciasGravadas Float? @default(0)
-  totalMercanciasExentas Float? @default(0)
-  totalMercanciasExonerada Float? @default(0)
-  totalGravado      Float?   @default(0)
-  totalExento       Float?   @default(0)
-  totalExonerado    Float?   @default(0)
-  totalVenta        Float?   @default(0)
-  totalDescuentos   Float?   @default(0)
-  totalVentaNeta    Float?   @default(0)
-  totalImpuesto     Float?   @default(0)
-  totalIVADevuelto  Float?   @default(0)
-  totalOtrosCargos  Float?   @default(0)
-  totalComprobante  Float?   @default(0)
+  // Totals used by reports
+  totalImpuestoEncrypted Json?
+  totalComprobanteEncrypted Json?
   
   // Exchange rate (for foreign currency)
   tipoMoneda        String?
@@ -74,6 +60,7 @@ model Invoice {
   @@index([userId])
   @@index([tipo])
   @@index([fechaEmision])
+  @@unique([userId, clave])
 }
 
 model EmailLog {

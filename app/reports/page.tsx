@@ -17,8 +17,16 @@ export default async function ReportsPage({
 }) {
   const params = await searchParams;
   const now = new Date();
-  const mes = params.mes ? parseInt(params.mes) : now.getMonth() + 1;
-  const año = params.año ? parseInt(params.año) : now.getFullYear();
+  const parsedMes = params.mes ? Number.parseInt(params.mes, 10) : NaN;
+  const parsedAño = params.año ? Number.parseInt(params.año, 10) : NaN;
+  const mes =
+    Number.isInteger(parsedMes) && parsedMes >= 1 && parsedMes <= 12
+      ? parsedMes
+      : now.getMonth() + 1;
+  const año =
+    Number.isInteger(parsedAño) && parsedAño >= 2000 && parsedAño <= 2100
+      ? parsedAño
+      : now.getFullYear();
 
   const summary = await getTaxSummary(mes, año);
   const invoices = await getInvoicesByPeriod(mes, año);

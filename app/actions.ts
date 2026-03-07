@@ -7,6 +7,29 @@ import type { Invoice } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { getIVADueDate, getMonthName } from '@/lib/utils';
+import {
+  decryptEncryptedNumber,
+  decryptEncryptedString,
+  encryptNullableNumber,
+  encryptNullableString,
+} from '@/lib/crypto';
+
+function encryptedString(value: unknown): string | undefined {
+  return decryptEncryptedString(value) || undefined;
+}
+
+function encryptedNumber(value: unknown, fallback = 0): number {
+  return decryptEncryptedNumber(value) ?? fallback;
+}
+
+function normalizePeriod(mes: number, año: number): { mes: number; año: number } {
+  const now = new Date();
+  const safeMes = Number.isInteger(mes) && mes >= 1 && mes <= 12 ? mes : now.getMonth() + 1;
+  const safeAño =
+    Number.isInteger(año) && año >= 2000 && año <= 2100 ? año : now.getFullYear();
+
+  return { mes: safeMes, año: safeAño };
+}
 
 function normalizeTaxId(value: string | null | undefined): string | null {
   if (!value) {
@@ -61,6 +84,45 @@ export type ProcessFileResult = {
   file: UploadedFile;
 };
 
+function mapInvoiceForClient(invoice: Invoice) {
+  const emisorNombre = encryptedString((invoice as any).emisorNombreEncrypted);
+  const receptorNombre = encryptedString((invoice as any).receptorNombreEncrypted);
+  const numeroConsecutivo = encryptedString(
+    (invoice as any).numeroConsecutivoEncrypted
+  );
+  const totalImpuesto = encryptedNumber((invoice as any).totalImpuestoEncrypted, 0);
+  const totalComprobante = encryptedNumber(
+    (invoice as any).totalComprobanteEncrypted,
+    0
+  );
+  const subtotalGravado = encryptedNumber(
+    (invoice as any).subtotalGravadoEncrypted,
+    0
+  );
+  const subtotalExento = encryptedNumber((invoice as any).subtotalExentoEncrypted, 0);
+  const tipoCambio = invoice.tipoCambio || 1;
+
+  return {
+    id: invoice.id,
+    tipo: invoice.tipo as InvoiceType,
+    fecha: invoice.fechaEmision || new Date(),
+    proveedor: invoice.tipo === 'GASTO' ? emisorNombre || undefined : undefined,
+    cliente: invoice.tipo === 'EMITIDA' ? receptorNombre || undefined : undefined,
+    numeroFactura: numeroConsecutivo || undefined,
+    moneda: invoice.tipoMoneda || 'CRC',
+    ivaOriginal: totalImpuesto,
+    totalOriginal: totalComprobante,
+    tipoCambio,
+    ivaCRC: totalImpuesto * tipoCambio,
+    totalCRC: totalComprobante * tipoCambio,
+    subtotalGravado,
+    subtotalExento,
+    subtotalGravadoCRC: subtotalGravado * tipoCambio,
+    subtotalExentoCRC: subtotalExento * tipoCambio,
+    tarifaIVA: invoice.tarifaIVA || 13,
+  };
+}
+
 /**
  * Processes an uploaded XML file and stores the invoice in the database
  */
@@ -98,28 +160,45 @@ export async function processXMLFile(
     // Parse XML
     const parsed = await parseInvoiceXML(fileContent);
 
-    // Check if invoice already exists
+    // Check if invoice already exists for this user
     if (parsed.clave) {
-      const existingInvoice = await prisma.invoice.findUnique({
+      const existingInvoice = await prisma.invoice.findFirst({
         where: {
+          userId: currentUser.id,
           clave: parsed.clave,
         },
+        select: { id: true },
       });
 
       if (existingInvoice) {
         throw new Error(
-          `La factura con clave ${parsed.clave} ya fue cargada anteriormente`
+          `La factura con clave ${parsed.clave} ya fue cargada anteriormente en tu cuenta`
         );
       }
     }
 
     const userTaxId = await getUserTaxId(currentUser.id);
+    const normalizedUserTaxId = normalizeTaxId(userTaxId);
+
+    if (!normalizedUserTaxId) {
+      throw new Error(
+        'No tienes tu Tax ID configurado en el perfil. Agrégalo para validar que el XML te pertenece.'
+      );
+    }
+
     const inferredTipo = inferInvoiceTypeFromTaxId(
-      userTaxId,
+      normalizedUserTaxId,
       parsed.emisor?.identificacion,
       parsed.receptor?.identificacion
     );
-    const resolvedTipo = inferredTipo || tipo;
+
+    if (!inferredTipo) {
+      throw new Error(
+        `El XML no coincide con tu Tax ID (${normalizedUserTaxId}). Verifica emisor/receptor antes de cargarlo.`
+      );
+    }
+
+    const resolvedTipo = inferredTipo;
 
     // Use exchange rate from XML (already included in the parsed data)
     const tipoCambio = parsed.tipoCambio;
@@ -136,21 +215,25 @@ export async function processXMLFile(
         userId: currentUser.id,
         fileName,
         tipo: resolvedTipo,
-        numeroConsecutivo: parsed.numeroConsecutivo,
+        numeroConsecutivoEncrypted: encryptNullableString(parsed.numeroConsecutivo),
         clave: parsed.clave,
         fechaEmision: new Date(parsed.fecha),
-        emisorNombre: parsed.emisor?.nombre,
-        emisorIdentificacion: parsed.emisor?.identificacion,
-        receptorNombre: parsed.receptor?.nombre,
-        receptorIdentificacion: parsed.receptor?.identificacion,
-        totalImpuesto: parsed.totalImpuesto,
-        totalComprobante: parsed.totalComprobante,
-        subtotalGravado: parsed.subtotalGravado,
-        subtotalExento: parsed.subtotalExento,
+        emisorNombreEncrypted: encryptNullableString(parsed.emisor?.nombre),
+        emisorIdentificacionEncrypted: encryptNullableString(
+          parsed.emisor?.identificacion
+        ),
+        receptorNombreEncrypted: encryptNullableString(parsed.receptor?.nombre),
+        receptorIdentificacionEncrypted: encryptNullableString(
+          parsed.receptor?.identificacion
+        ),
+        totalImpuestoEncrypted: encryptNullableNumber(parsed.totalImpuesto),
+        totalComprobanteEncrypted: encryptNullableNumber(parsed.totalComprobante),
+        subtotalGravadoEncrypted: encryptNullableNumber(parsed.subtotalGravado),
+        subtotalExentoEncrypted: encryptNullableNumber(parsed.subtotalExento),
         tarifaIVA: parsed.tarifaIVA,
         tipoMoneda: parsed.moneda,
         tipoCambio,
-      },
+      } as any,
     });
 
     uploadedFile.status = 'SUCCESS';
@@ -159,12 +242,12 @@ export async function processXMLFile(
       id: invoice.id,
       tipo: invoice.tipo as InvoiceType,
       fecha: invoice.fechaEmision?.toISOString() || new Date().toISOString(),
-      proveedor: resolvedTipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-      cliente: resolvedTipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
-      numeroFactura: invoice.numeroConsecutivo || undefined,
+      proveedor: resolvedTipo === 'GASTO' ? parsed.emisor?.nombre || undefined : undefined,
+      cliente: resolvedTipo === 'EMITIDA' ? parsed.receptor?.nombre || undefined : undefined,
+      numeroFactura: parsed.numeroConsecutivo || undefined,
       moneda: (invoice.tipoMoneda as Currency) || 'CRC',
-      ivaOriginal: invoice.totalImpuesto || 0,
-      totalOriginal: invoice.totalComprobante || 0,
+      ivaOriginal: parsed.totalImpuesto || 0,
+      totalOriginal: parsed.totalComprobante || 0,
       tipoCambio: invoice.tipoCambio || 1,
       ivaCRC,
       totalCRC,
@@ -200,8 +283,9 @@ export async function getInvoicesByPeriod(mes: number, año: number) {
     return [];
   }
 
-  const startDate = new Date(año, mes - 1, 1);
-  const endDate = new Date(año, mes, 0, 23, 59, 59);
+  const period = normalizePeriod(mes, año);
+  const startDate = new Date(period.año, period.mes - 1, 1);
+  const endDate = new Date(period.año, period.mes, 0, 23, 59, 59);
 
   const invoices = await prisma.invoice.findMany({
     where: {
@@ -216,25 +300,7 @@ export async function getInvoicesByPeriod(mes: number, año: number) {
     },
   });
 
-  return invoices.map((invoice: Invoice) => ({
-    id: invoice.id,
-    tipo: invoice.tipo as InvoiceType,
-    fecha: invoice.fechaEmision || new Date(),
-    proveedor: invoice.tipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-    cliente: invoice.tipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
-    numeroFactura: invoice.numeroConsecutivo || undefined,
-    moneda: invoice.tipoMoneda || 'CRC',
-    ivaOriginal: invoice.totalImpuesto || 0,
-    totalOriginal: invoice.totalComprobante || 0,
-    tipoCambio: invoice.tipoCambio || 1,
-    ivaCRC: (invoice.totalImpuesto || 0) * (invoice.tipoCambio || 1),
-    totalCRC: (invoice.totalComprobante || 0) * (invoice.tipoCambio || 1),
-    subtotalGravado: invoice.subtotalGravado || 0,
-    subtotalExento: invoice.subtotalExento || 0,
-    subtotalGravadoCRC: (invoice.subtotalGravado || 0) * (invoice.tipoCambio || 1),
-    subtotalExentoCRC: (invoice.subtotalExento || 0) * (invoice.tipoCambio || 1),
-    tarifaIVA: invoice.tarifaIVA || 13,
-  }));
+  return invoices.map((invoice: Invoice) => mapInvoiceForClient(invoice));
 }
 
 /**
@@ -243,9 +309,10 @@ export async function getInvoicesByPeriod(mes: number, año: number) {
  */
 export async function getTaxSummary(mes: number, año: number) {
   const session = await getServerSession(authOptions);
+  const period = normalizePeriod(mes, año);
 
   // Calculate dates and due date info
-  const dueDate = getIVADueDate(mes, año);
+  const dueDate = getIVADueDate(period.mes, period.año);
   const today = new Date();
   const diffTime = dueDate.getTime() - today.getTime();
   const diasHastaVencimiento = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -256,9 +323,9 @@ export async function getTaxSummary(mes: number, año: number) {
     ivaDebito: 0,
     ivaCredito: 0,
     ivaAPagar: 0,
-    periodo: `${getMonthName(mes)} ${año}`,
-    mes,
-    año,
+    periodo: `${getMonthName(period.mes)} ${period.año}`,
+    mes: period.mes,
+    año: period.año,
     fechaVencimiento: dueDate,
     diasHastaVencimiento: Math.max(0, diasHastaVencimiento),
     estaProximoVencimiento,
@@ -278,8 +345,8 @@ export async function getTaxSummary(mes: number, año: number) {
     return defaultSummary;
   }
 
-  const startDate = new Date(año, mes - 1, 1);
-  const endDate = new Date(año, mes, 0, 23, 59, 59);
+  const startDate = new Date(period.año, period.mes - 1, 1);
+  const endDate = new Date(period.año, period.mes, 0, 23, 59, 59);
 
   const invoices = await prisma.invoice.findMany({
     where: {
@@ -296,37 +363,47 @@ export async function getTaxSummary(mes: number, año: number) {
 
   // IVA calculations
   const ivaCompras = compras.reduce(
-    (sum: number, inv: Invoice) => sum + (inv.totalImpuesto || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * (inv.tipoCambio || 1),
     0
   );
 
   const ivaVentas = ventas.reduce(
-    (sum: number, inv: Invoice) => sum + (inv.totalImpuesto || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * (inv.tipoCambio || 1),
     0
   );
 
   // Subtotals for Hacienda - Base imponible (monto antes de IVA)
   const subtotalVentasGravadas = ventas.reduce(
-    (sum: number, inv: Invoice) =>
-      sum + (inv.subtotalGravado || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).subtotalGravadoEncrypted, 0) *
+        (inv.tipoCambio || 1),
     0
   );
 
   const subtotalVentasExentas = ventas.reduce(
-    (sum: number, inv: Invoice) =>
-      sum + (inv.subtotalExento || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).subtotalExentoEncrypted, 0) * (inv.tipoCambio || 1),
     0
   );
 
   const subtotalComprasGravadas = compras.reduce(
-    (sum: number, inv: Invoice) =>
-      sum + (inv.subtotalGravado || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).subtotalGravadoEncrypted, 0) *
+        (inv.tipoCambio || 1),
     0
   );
 
   const subtotalComprasExentas = compras.reduce(
-    (sum: number, inv: Invoice) =>
-      sum + (inv.subtotalExento || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).subtotalExentoEncrypted, 0) * (inv.tipoCambio || 1),
     0
   );
 
@@ -365,9 +442,9 @@ export async function getTaxSummary(mes: number, año: number) {
     ivaDebito: ivaVentas,
     ivaCredito: ivaCompras,
     ivaAPagar: ivaPagar,
-    periodo: `${getMonthName(mes)} ${año}`,
-    mes,
-    año,
+    periodo: `${getMonthName(period.mes)} ${period.año}`,
+    mes: period.mes,
+    año: period.año,
     fechaVencimiento: dueDate,
     diasHastaVencimiento: Math.max(0, diasHastaVencimiento),
     estaProximoVencimiento,
@@ -403,25 +480,7 @@ export async function getAllInvoices() {
     },
   });
 
-  return invoices.map((invoice: Invoice) => ({
-    id: invoice.id,
-    tipo: invoice.tipo as InvoiceType,
-    fecha: invoice.fechaEmision || new Date(),
-    proveedor: invoice.tipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-    cliente: invoice.tipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
-    numeroFactura: invoice.numeroConsecutivo || undefined,
-    moneda: invoice.tipoMoneda || 'CRC',
-    ivaOriginal: invoice.totalImpuesto || 0,
-    totalOriginal: invoice.totalComprobante || 0,
-    tipoCambio: invoice.tipoCambio || 1,
-    ivaCRC: (invoice.totalImpuesto || 0) * (invoice.tipoCambio || 1),
-    totalCRC: (invoice.totalComprobante || 0) * (invoice.tipoCambio || 1),
-    subtotalGravado: invoice.subtotalGravado || 0,
-    subtotalExento: invoice.subtotalExento || 0,
-    subtotalGravadoCRC: (invoice.subtotalGravado || 0) * (invoice.tipoCambio || 1),
-    subtotalExentoCRC: (invoice.subtotalExento || 0) * (invoice.tipoCambio || 1),
-    tarifaIVA: invoice.tarifaIVA || 13,
-  }));
+  return invoices.map((invoice: Invoice) => mapInvoiceForClient(invoice));
 }
 
 /**
@@ -444,25 +503,7 @@ export async function getRecentInvoices() {
     take: 5,
   });
 
-  return invoices.map((invoice: Invoice) => ({
-    id: invoice.id,
-    tipo: invoice.tipo as InvoiceType,
-    fecha: invoice.fechaEmision || new Date(),
-    proveedor: invoice.tipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-    cliente: invoice.tipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
-    numeroFactura: invoice.numeroConsecutivo || undefined,
-    moneda: invoice.tipoMoneda || 'CRC',
-    ivaOriginal: invoice.totalImpuesto || 0,
-    totalOriginal: invoice.totalComprobante || 0,
-    tipoCambio: invoice.tipoCambio || 1,
-    ivaCRC: (invoice.totalImpuesto || 0) * (invoice.tipoCambio || 1),
-    totalCRC: (invoice.totalComprobante || 0) * (invoice.tipoCambio || 1),
-    subtotalGravado: invoice.subtotalGravado || 0,
-    subtotalExento: invoice.subtotalExento || 0,
-    subtotalGravadoCRC: (invoice.subtotalGravado || 0) * (invoice.tipoCambio || 1),
-    subtotalExentoCRC: (invoice.subtotalExento || 0) * (invoice.tipoCambio || 1),
-    tarifaIVA: invoice.tarifaIVA || 13,
-  }));
+  return invoices.map((invoice: Invoice) => mapInvoiceForClient(invoice));
 }
 
 /**

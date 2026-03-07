@@ -9,10 +9,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:push:accept-data-loss": "prisma db push --accept-data-loss",
-    "db:deploy": "prisma migrate deploy",
-    "db:sync": "pnpm run db:deploy",
+    "db:sync": "prisma migrate deploy",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -28,11 +25,11 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.1",
-    "@types/node": "^22.19.14",
+    "@types/node": "^25.3.5",
     "@types/pg": "^8.18.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^10.0.2",
+    "eslint": "^10.0.3",
     "eslint-config-next": "16.1.6",
     "eslint-config-prettier": "^10.1.8",
     "prisma": "^7.4.2",

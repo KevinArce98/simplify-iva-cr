@@ -2,6 +2,7 @@ import { prisma } from './prisma';
 import { parseInvoiceXML, getDocumentType } from './xml-parser';
 import { extractUserIdFromInvoiceEmail, normalizeEmail } from './invoice-email';
 import type { InvoiceType, ParsedXMLInvoice } from './types';
+import { encryptNullableNumber, encryptNullableString } from './crypto';
 
 async function getUserTaxIdById(userId: string): Promise<string | null> {
   try {
@@ -212,18 +213,21 @@ async function getAttachmentContent(attachment: MailgunAttachment): Promise<stri
 }
 
 /**
- * Checks if invoice already exists by clave
+ * Checks if invoice already exists by user and clave
  */
-async function isInvoiceDuplicate(clave: string): Promise<boolean> {
+async function isInvoiceDuplicate(userId: string, clave: string): Promise<boolean> {
   try {
-    const existing = await prisma.invoice.findUnique({
-      where: { clave },
+    const existing = await prisma.invoice.findFirst({
+      where: {
+        userId,
+        clave,
+      },
       select: { id: true },
     });
     
     return !!existing;
   } catch (error) {
-    console.error(`Error checking duplicate for clave ${clave}:`, error);
+    console.error(`Error checking duplicate for user ${userId} and clave ${clave}:`, error);
     return false;
   }
 }
@@ -257,14 +261,14 @@ async function processXMLAttachment(
     // Parse invoice XML
     const parsedInvoice = await parseInvoiceXML(xmlContent);
     
-    // Check for duplicate by clave
+    // Check for duplicate by clave within the same user
     if (parsedInvoice.clave) {
-      const isDuplicate = await isInvoiceDuplicate(parsedInvoice.clave);
+      const isDuplicate = await isInvoiceDuplicate(userId, parsedInvoice.clave);
       if (isDuplicate) {
         return {
           filename,
           status: 'skipped',
-          reason: `Duplicate invoice (clave: ${parsedInvoice.clave})`,
+          reason: `Duplicate invoice for this user (clave: ${parsedInvoice.clave})`,
         };
       }
     }
@@ -273,20 +277,10 @@ async function processXMLAttachment(
     const exchangeRate = parsedInvoice.tipoCambio;
     const tipo = classifyInvoiceType(parsedInvoice, userTaxId);
     
-    // Extract detailed amounts from desglose if available
-    let totalGravado = parsedInvoice.subtotalGravado;
-    let totalExento = parsedInvoice.subtotalExento;
+    // Extract total tax from desglose if available
     let totalImpuesto = parsedInvoice.totalImpuesto;
     
     if (parsedInvoice.desgloseTarifas && parsedInvoice.desgloseTarifas.length > 0) {
-      totalGravado = parsedInvoice.desgloseTarifas
-        .filter(d => d.tarifa > 0)
-        .reduce((sum, d) => sum + d.base, 0);
-      
-      totalExento = parsedInvoice.desgloseTarifas
-        .filter(d => d.tarifa === 0)
-        .reduce((sum, d) => sum + d.base, 0);
-      
       totalImpuesto = parsedInvoice.desgloseTarifas
         .reduce((sum, d) => sum + d.impuesto, 0);
     }
@@ -297,29 +291,35 @@ async function processXMLAttachment(
         userId,
         fileName: filename,
         tipo,
-        numeroConsecutivo: parsedInvoice.numeroConsecutivo,
+        numeroConsecutivoEncrypted: encryptNullableString(
+          parsedInvoice.numeroConsecutivo
+        ),
         clave: parsedInvoice.clave,
         fechaEmision: invoiceDate,
-        emisorNombre: parsedInvoice.emisor?.nombre,
-        emisorIdentificacion: parsedInvoice.emisor?.identificacion,
-        receptorNombre: parsedInvoice.receptor?.nombre,
-        receptorIdentificacion: parsedInvoice.receptor?.identificacion,
+        emisorNombreEncrypted: encryptNullableString(parsedInvoice.emisor?.nombre),
+        emisorIdentificacionEncrypted: encryptNullableString(
+          parsedInvoice.emisor?.identificacion
+        ),
+        receptorNombreEncrypted: encryptNullableString(parsedInvoice.receptor?.nombre),
+        receptorIdentificacionEncrypted: encryptNullableString(
+          parsedInvoice.receptor?.identificacion
+        ),
         
         // Base amounts for Hacienda declaration
-        subtotalGravado: parsedInvoice.subtotalGravado,
-        subtotalExento: parsedInvoice.subtotalExento,
+        subtotalGravadoEncrypted: encryptNullableNumber(parsedInvoice.subtotalGravado),
+        subtotalExentoEncrypted: encryptNullableNumber(parsedInvoice.subtotalExento),
         tarifaIVA: parsedInvoice.tarifaIVA,
         
-        // Detailed amounts from XML
-        totalGravado,
-        totalExento,
-        totalImpuesto,
-        totalComprobante: parsedInvoice.totalComprobante,
+        // Totals used by reports
+        totalImpuestoEncrypted: encryptNullableNumber(totalImpuesto),
+        totalComprobanteEncrypted: encryptNullableNumber(
+          parsedInvoice.totalComprobante
+        ),
         
         // Currency and exchange rate
         tipoMoneda: parsedInvoice.moneda,
         tipoCambio: exchangeRate,
-      },
+      } as any,
     });
     
     console.log(`✓ Created invoice ${invoice.id} for user ${userId} from ${filename}`);
