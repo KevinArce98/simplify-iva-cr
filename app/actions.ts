@@ -98,17 +98,19 @@ export async function processXMLFile(
     // Parse XML
     const parsed = await parseInvoiceXML(fileContent);
 
-    // Check if invoice already exists
+    // Check if invoice already exists for this user
     if (parsed.clave) {
-      const existingInvoice = await prisma.invoice.findUnique({
+      const existingInvoice = await prisma.invoice.findFirst({
         where: {
+          userId: currentUser.id,
           clave: parsed.clave,
         },
+        select: { id: true },
       });
 
       if (existingInvoice) {
         throw new Error(
-          `La factura con clave ${parsed.clave} ya fue cargada anteriormente`
+          `La factura con clave ${parsed.clave} ya fue cargada anteriormente en tu cuenta`
         );
       }
     }

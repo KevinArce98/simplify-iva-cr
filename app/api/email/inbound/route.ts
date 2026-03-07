@@ -20,7 +20,7 @@ import { prisma } from '@/lib/prisma';
  * - Processes XML attachments only
  * - Ignores PDF files
  * - Ignores MensajeReceptor documents
- * - Deduplicates invoices by clave
+ * - Deduplicates invoices by user + clave
  * - Logs all email processing events
  */
 export async function POST(request: NextRequest) {
