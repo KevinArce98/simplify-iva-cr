@@ -116,12 +116,27 @@ export async function processXMLFile(
     }
 
     const userTaxId = await getUserTaxId(currentUser.id);
+    const normalizedUserTaxId = normalizeTaxId(userTaxId);
+
+    if (!normalizedUserTaxId) {
+      throw new Error(
+        'No tienes tu Tax ID configurado en el perfil. Agrégalo para validar que el XML te pertenece.'
+      );
+    }
+
     const inferredTipo = inferInvoiceTypeFromTaxId(
-      userTaxId,
+      normalizedUserTaxId,
       parsed.emisor?.identificacion,
       parsed.receptor?.identificacion
     );
-    const resolvedTipo = inferredTipo || tipo;
+
+    if (!inferredTipo) {
+      throw new Error(
+        `El XML no coincide con tu Tax ID (${normalizedUserTaxId}). Verifica emisor/receptor antes de cargarlo.`
+      );
+    }
+
+    const resolvedTipo = inferredTipo;
 
     // Use exchange rate from XML (already included in the parsed data)
     const tipoCambio = parsed.tipoCambio;

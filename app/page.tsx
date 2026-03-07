@@ -336,7 +336,7 @@ export default async function HomePage({
                                     : 'bg-green-600 text-white'
                                 }`}
                               >
-                                {invoice.tipo === 'GASTO' ? 'Gasto' : 'Emitida'}
+                                {invoice.tipo === 'GASTO' ? 'Compra' : 'Venta'}
                               </span>
                             </div>
                             <div className="flex items-center gap-3 text-xs text-[#4d6599]">

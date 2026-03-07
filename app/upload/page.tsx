@@ -292,11 +292,6 @@ export default function UploadPage() {
                                 <span className="text-sm font-medium text-[#0e121b]">
                                   {file.name}
                                 </span>
-                                {file.error && (
-                                  <span className="text-xs text-red-600">
-                                    {file.error}
-                                  </span>
-                                )}
                               </div>
                             </div>
                           </td>
@@ -308,7 +303,7 @@ export default function UploadPage() {
                                   : 'bg-green-50 text-green-700 ring-green-600/20'
                               }`}
                             >
-                              {file.tipo === 'GASTO' ? 'Gasto' : 'Emitida'}
+                              {file.tipo === 'GASTO' ? 'Compra' : 'Venta'}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-[#4d6599]">
@@ -324,7 +319,8 @@ export default function UploadPage() {
                             {formatFileSize(file.size)}
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
                               {file.status === 'PENDING' && (
                                 <>
                                   <span className="material-symbols-outlined text-gray-400 text-[20px]">
@@ -365,6 +361,12 @@ export default function UploadPage() {
                                   </span>
                                 </>
                               )}
+                              </div>
+                              {file.status === 'ERROR' && file.error && (
+                                <span className="text-xs text-red-600 leading-snug wrap-break-word max-w-72">
+                                  {file.error}
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right">
@@ -387,8 +389,8 @@ export default function UploadPage() {
                     info
                   </span>
                   <span className="text-[#4d6599]">
-                    Se procesarán {successCount} archivos válidos.
-                    {errorCount > 0 && ` El archivo con error será ignorado.`}
+                    Se procesaron {successCount} {successCount === 1 ? 'archivo válido' : 'archivos válidos'}.
+                    {errorCount > 0 && ` ${errorCount} ${errorCount === 1 ? 'archivo fue rechazado' : 'archivos fueron rechazados'} (ver detalle en Estado).`}
                   </span>
                 </div>
               )}
