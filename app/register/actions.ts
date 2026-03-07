@@ -2,7 +2,7 @@
 
 import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { buildInvoiceEmailForUserId, normalizeEmail } from '@/lib/invoice-email';
+import { buildInvoiceEmailForTaxId, normalizeEmail } from '@/lib/invoice-email';
 
 export async function registerUser(formData: {
   email: string;
@@ -45,7 +45,7 @@ export async function registerUser(formData: {
         WHERE id = ${user.id}
       `;
 
-      const invoiceEmail = buildInvoiceEmailForUserId(user.id);
+      const invoiceEmail = buildInvoiceEmailForTaxId(taxId);
       await prisma.$executeRaw`
         UPDATE "User"
         SET "invoiceEmail" = ${invoiceEmail}

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { PasswordInput } from '@/app/components/password-input';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -83,24 +84,15 @@ export default function LoginPage() {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-[#0e121b] mb-2"
-              >
-                Contraseña
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-[#d0d7e7] rounded-lg focus:outline-none focus:ring-2 focus:ring-(--primary) focus:border-transparent text-[#0e121b]"
-                placeholder="••••••••"
-                disabled={isLoading}
-              />
-            </div>
+            <PasswordInput
+              id="password"
+              label="Contraseña"
+              value={password}
+              onChange={setPassword}
+              required
+              placeholder="••••••••"
+              disabled={isLoading}
+            />
 
             <button
               type="submit"

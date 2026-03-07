@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { buildInvoiceEmailForTaxId } from '@/lib/invoice-email';
 
 function getStatusMessage(status: string | undefined) {
   switch (status) {
@@ -83,9 +84,10 @@ export default async function ProfilePage({
     }
 
     try {
+      const invoiceEmail = buildInvoiceEmailForTaxId(taxId);
       await prisma.$executeRaw`
         UPDATE "User"
-        SET "taxId" = ${taxId}
+        SET "taxId" = ${taxId}, "invoiceEmail" = ${invoiceEmail}
         WHERE id = ${currentSession.user.id}
       `;
     } catch (error) {
