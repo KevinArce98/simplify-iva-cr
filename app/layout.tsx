@@ -1,18 +1,19 @@
-import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
-import { Providers } from "./providers";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
+import { Montserrat } from 'next/font/google';
+import { Providers } from './providers';
+import './globals.css';
 
 const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-montserrat",
-  weight: ["300", "400", "500", "600", "700", "800"],
-  display: "swap",
+  subsets: ['latin'],
+  variable: '--font-montserrat',
+  weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: "Simplify IVA CR",
-  description: "Cálculo mensual de IVA para profesionales independientes en Costa Rica",
+  title: 'Simplify IVA CR',
+  description: 'Cálculo mensual de IVA para profesionales independientes en Costa Rica',
 };
 
 export default function RootLayout({
@@ -29,9 +30,8 @@ export default function RootLayout({
         />
       </head>
       <body className={`${montserrat.variable} antialiased font-sans`}>
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
