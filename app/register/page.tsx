@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { registerUser } from './actions';
 import { signIn } from 'next-auth/react';
+import { PasswordInput } from '@/app/components/password-input';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -146,45 +147,27 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-[#0e121b] mb-2"
-              >
-                Contraseña
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                className="w-full px-4 py-3 border border-[#d0d7e7] rounded-lg focus:outline-none focus:ring-2 focus:ring-(--primary) focus:border-transparent text-[#0e121b]"
-                placeholder="Mínimo 8 caracteres"
-                disabled={isLoading}
-              />
-            </div>
+            <PasswordInput
+              id="password"
+              label="Contraseña"
+              value={password}
+              onChange={setPassword}
+              required
+              minLength={8}
+              placeholder="Mínimo 8 caracteres"
+              disabled={isLoading}
+            />
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-[#0e121b] mb-2"
-              >
-                Confirmar contraseña
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={8}
-                className="w-full px-4 py-3 border border-[#d0d7e7] rounded-lg focus:outline-none focus:ring-2 focus:ring-(--primary) focus:border-transparent text-[#0e121b]"
-                placeholder="Repite tu contraseña"
-                disabled={isLoading}
-              />
-            </div>
+            <PasswordInput
+              id="confirmPassword"
+              label="Confirmar contraseña"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              required
+              minLength={8}
+              placeholder="Repite tu contraseña"
+              disabled={isLoading}
+            />
 
             <button
               type="submit"
