@@ -7,6 +7,20 @@ import type { Invoice } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { getIVADueDate, getMonthName } from '@/lib/utils';
+import {
+  decryptEncryptedNumber,
+  decryptEncryptedString,
+  encryptNullableNumber,
+  encryptNullableString,
+} from '@/lib/crypto';
+
+function encryptedString(value: unknown): string | undefined {
+  return decryptEncryptedString(value) || undefined;
+}
+
+function encryptedNumber(value: unknown, fallback = 0): number {
+  return decryptEncryptedNumber(value) ?? fallback;
+}
 
 function normalizeTaxId(value: string | null | undefined): string | null {
   if (!value) {
@@ -60,6 +74,45 @@ export type ProcessFileResult = {
   success: boolean;
   file: UploadedFile;
 };
+
+function mapInvoiceForClient(invoice: Invoice) {
+  const emisorNombre = encryptedString((invoice as any).emisorNombreEncrypted);
+  const receptorNombre = encryptedString((invoice as any).receptorNombreEncrypted);
+  const numeroConsecutivo = encryptedString(
+    (invoice as any).numeroConsecutivoEncrypted
+  );
+  const totalImpuesto = encryptedNumber((invoice as any).totalImpuestoEncrypted, 0);
+  const totalComprobante = encryptedNumber(
+    (invoice as any).totalComprobanteEncrypted,
+    0
+  );
+  const subtotalGravado = encryptedNumber(
+    (invoice as any).subtotalGravadoEncrypted,
+    0
+  );
+  const subtotalExento = encryptedNumber((invoice as any).subtotalExentoEncrypted, 0);
+  const tipoCambio = invoice.tipoCambio || 1;
+
+  return {
+    id: invoice.id,
+    tipo: invoice.tipo as InvoiceType,
+    fecha: invoice.fechaEmision || new Date(),
+    proveedor: invoice.tipo === 'GASTO' ? emisorNombre || undefined : undefined,
+    cliente: invoice.tipo === 'EMITIDA' ? receptorNombre || undefined : undefined,
+    numeroFactura: numeroConsecutivo || undefined,
+    moneda: invoice.tipoMoneda || 'CRC',
+    ivaOriginal: totalImpuesto,
+    totalOriginal: totalComprobante,
+    tipoCambio,
+    ivaCRC: totalImpuesto * tipoCambio,
+    totalCRC: totalComprobante * tipoCambio,
+    subtotalGravado,
+    subtotalExento,
+    subtotalGravadoCRC: subtotalGravado * tipoCambio,
+    subtotalExentoCRC: subtotalExento * tipoCambio,
+    tarifaIVA: invoice.tarifaIVA || 13,
+  };
+}
 
 /**
  * Processes an uploaded XML file and stores the invoice in the database
@@ -153,21 +206,25 @@ export async function processXMLFile(
         userId: currentUser.id,
         fileName,
         tipo: resolvedTipo,
-        numeroConsecutivo: parsed.numeroConsecutivo,
+        numeroConsecutivoEncrypted: encryptNullableString(parsed.numeroConsecutivo),
         clave: parsed.clave,
         fechaEmision: new Date(parsed.fecha),
-        emisorNombre: parsed.emisor?.nombre,
-        emisorIdentificacion: parsed.emisor?.identificacion,
-        receptorNombre: parsed.receptor?.nombre,
-        receptorIdentificacion: parsed.receptor?.identificacion,
-        totalImpuesto: parsed.totalImpuesto,
-        totalComprobante: parsed.totalComprobante,
-        subtotalGravado: parsed.subtotalGravado,
-        subtotalExento: parsed.subtotalExento,
+        emisorNombreEncrypted: encryptNullableString(parsed.emisor?.nombre),
+        emisorIdentificacionEncrypted: encryptNullableString(
+          parsed.emisor?.identificacion
+        ),
+        receptorNombreEncrypted: encryptNullableString(parsed.receptor?.nombre),
+        receptorIdentificacionEncrypted: encryptNullableString(
+          parsed.receptor?.identificacion
+        ),
+        totalImpuestoEncrypted: encryptNullableNumber(parsed.totalImpuesto),
+        totalComprobanteEncrypted: encryptNullableNumber(parsed.totalComprobante),
+        subtotalGravadoEncrypted: encryptNullableNumber(parsed.subtotalGravado),
+        subtotalExentoEncrypted: encryptNullableNumber(parsed.subtotalExento),
         tarifaIVA: parsed.tarifaIVA,
         tipoMoneda: parsed.moneda,
         tipoCambio,
-      },
+      } as any,
     });
 
     uploadedFile.status = 'SUCCESS';
@@ -176,12 +233,12 @@ export async function processXMLFile(
       id: invoice.id,
       tipo: invoice.tipo as InvoiceType,
       fecha: invoice.fechaEmision?.toISOString() || new Date().toISOString(),
-      proveedor: resolvedTipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-      cliente: resolvedTipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
-      numeroFactura: invoice.numeroConsecutivo || undefined,
+      proveedor: resolvedTipo === 'GASTO' ? parsed.emisor?.nombre || undefined : undefined,
+      cliente: resolvedTipo === 'EMITIDA' ? parsed.receptor?.nombre || undefined : undefined,
+      numeroFactura: parsed.numeroConsecutivo || undefined,
       moneda: (invoice.tipoMoneda as Currency) || 'CRC',
-      ivaOriginal: invoice.totalImpuesto || 0,
-      totalOriginal: invoice.totalComprobante || 0,
+      ivaOriginal: parsed.totalImpuesto || 0,
+      totalOriginal: parsed.totalComprobante || 0,
       tipoCambio: invoice.tipoCambio || 1,
       ivaCRC,
       totalCRC,
@@ -233,25 +290,7 @@ export async function getInvoicesByPeriod(mes: number, año: number) {
     },
   });
 
-  return invoices.map((invoice: Invoice) => ({
-    id: invoice.id,
-    tipo: invoice.tipo as InvoiceType,
-    fecha: invoice.fechaEmision || new Date(),
-    proveedor: invoice.tipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-    cliente: invoice.tipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
-    numeroFactura: invoice.numeroConsecutivo || undefined,
-    moneda: invoice.tipoMoneda || 'CRC',
-    ivaOriginal: invoice.totalImpuesto || 0,
-    totalOriginal: invoice.totalComprobante || 0,
-    tipoCambio: invoice.tipoCambio || 1,
-    ivaCRC: (invoice.totalImpuesto || 0) * (invoice.tipoCambio || 1),
-    totalCRC: (invoice.totalComprobante || 0) * (invoice.tipoCambio || 1),
-    subtotalGravado: invoice.subtotalGravado || 0,
-    subtotalExento: invoice.subtotalExento || 0,
-    subtotalGravadoCRC: (invoice.subtotalGravado || 0) * (invoice.tipoCambio || 1),
-    subtotalExentoCRC: (invoice.subtotalExento || 0) * (invoice.tipoCambio || 1),
-    tarifaIVA: invoice.tarifaIVA || 13,
-  }));
+  return invoices.map((invoice: Invoice) => mapInvoiceForClient(invoice));
 }
 
 /**
@@ -313,37 +352,47 @@ export async function getTaxSummary(mes: number, año: number) {
 
   // IVA calculations
   const ivaCompras = compras.reduce(
-    (sum: number, inv: Invoice) => sum + (inv.totalImpuesto || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * (inv.tipoCambio || 1),
     0
   );
 
   const ivaVentas = ventas.reduce(
-    (sum: number, inv: Invoice) => sum + (inv.totalImpuesto || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * (inv.tipoCambio || 1),
     0
   );
 
   // Subtotals for Hacienda - Base imponible (monto antes de IVA)
   const subtotalVentasGravadas = ventas.reduce(
-    (sum: number, inv: Invoice) =>
-      sum + (inv.subtotalGravado || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).subtotalGravadoEncrypted, 0) *
+        (inv.tipoCambio || 1),
     0
   );
 
   const subtotalVentasExentas = ventas.reduce(
-    (sum: number, inv: Invoice) =>
-      sum + (inv.subtotalExento || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).subtotalExentoEncrypted, 0) * (inv.tipoCambio || 1),
     0
   );
 
   const subtotalComprasGravadas = compras.reduce(
-    (sum: number, inv: Invoice) =>
-      sum + (inv.subtotalGravado || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).subtotalGravadoEncrypted, 0) *
+        (inv.tipoCambio || 1),
     0
   );
 
   const subtotalComprasExentas = compras.reduce(
-    (sum: number, inv: Invoice) =>
-      sum + (inv.subtotalExento || 0) * (inv.tipoCambio || 1),
+    (sum: number, inv) =>
+      sum +
+      encryptedNumber((inv as any).subtotalExentoEncrypted, 0) * (inv.tipoCambio || 1),
     0
   );
 
@@ -420,25 +469,7 @@ export async function getAllInvoices() {
     },
   });
 
-  return invoices.map((invoice: Invoice) => ({
-    id: invoice.id,
-    tipo: invoice.tipo as InvoiceType,
-    fecha: invoice.fechaEmision || new Date(),
-    proveedor: invoice.tipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-    cliente: invoice.tipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
-    numeroFactura: invoice.numeroConsecutivo || undefined,
-    moneda: invoice.tipoMoneda || 'CRC',
-    ivaOriginal: invoice.totalImpuesto || 0,
-    totalOriginal: invoice.totalComprobante || 0,
-    tipoCambio: invoice.tipoCambio || 1,
-    ivaCRC: (invoice.totalImpuesto || 0) * (invoice.tipoCambio || 1),
-    totalCRC: (invoice.totalComprobante || 0) * (invoice.tipoCambio || 1),
-    subtotalGravado: invoice.subtotalGravado || 0,
-    subtotalExento: invoice.subtotalExento || 0,
-    subtotalGravadoCRC: (invoice.subtotalGravado || 0) * (invoice.tipoCambio || 1),
-    subtotalExentoCRC: (invoice.subtotalExento || 0) * (invoice.tipoCambio || 1),
-    tarifaIVA: invoice.tarifaIVA || 13,
-  }));
+  return invoices.map((invoice: Invoice) => mapInvoiceForClient(invoice));
 }
 
 /**
@@ -461,25 +492,7 @@ export async function getRecentInvoices() {
     take: 5,
   });
 
-  return invoices.map((invoice: Invoice) => ({
-    id: invoice.id,
-    tipo: invoice.tipo as InvoiceType,
-    fecha: invoice.fechaEmision || new Date(),
-    proveedor: invoice.tipo === 'GASTO' ? invoice.emisorNombre || undefined : undefined,
-    cliente: invoice.tipo === 'EMITIDA' ? invoice.receptorNombre || undefined : undefined,
-    numeroFactura: invoice.numeroConsecutivo || undefined,
-    moneda: invoice.tipoMoneda || 'CRC',
-    ivaOriginal: invoice.totalImpuesto || 0,
-    totalOriginal: invoice.totalComprobante || 0,
-    tipoCambio: invoice.tipoCambio || 1,
-    ivaCRC: (invoice.totalImpuesto || 0) * (invoice.tipoCambio || 1),
-    totalCRC: (invoice.totalComprobante || 0) * (invoice.tipoCambio || 1),
-    subtotalGravado: invoice.subtotalGravado || 0,
-    subtotalExento: invoice.subtotalExento || 0,
-    subtotalGravadoCRC: (invoice.subtotalGravado || 0) * (invoice.tipoCambio || 1),
-    subtotalExentoCRC: (invoice.subtotalExento || 0) * (invoice.tipoCambio || 1),
-    tarifaIVA: invoice.tarifaIVA || 13,
-  }));
+  return invoices.map((invoice: Invoice) => mapInvoiceForClient(invoice));
 }
 
 /**

@@ -2,6 +2,7 @@ import { prisma } from './prisma';
 import { parseInvoiceXML, getDocumentType } from './xml-parser';
 import { extractUserIdFromInvoiceEmail, normalizeEmail } from './invoice-email';
 import type { InvoiceType, ParsedXMLInvoice } from './types';
+import { encryptNullableNumber, encryptNullableString } from './crypto';
 
 async function getUserTaxIdById(userId: string): Promise<string | null> {
   try {
@@ -290,27 +291,35 @@ async function processXMLAttachment(
         userId,
         fileName: filename,
         tipo,
-        numeroConsecutivo: parsedInvoice.numeroConsecutivo,
+        numeroConsecutivoEncrypted: encryptNullableString(
+          parsedInvoice.numeroConsecutivo
+        ),
         clave: parsedInvoice.clave,
         fechaEmision: invoiceDate,
-        emisorNombre: parsedInvoice.emisor?.nombre,
-        emisorIdentificacion: parsedInvoice.emisor?.identificacion,
-        receptorNombre: parsedInvoice.receptor?.nombre,
-        receptorIdentificacion: parsedInvoice.receptor?.identificacion,
+        emisorNombreEncrypted: encryptNullableString(parsedInvoice.emisor?.nombre),
+        emisorIdentificacionEncrypted: encryptNullableString(
+          parsedInvoice.emisor?.identificacion
+        ),
+        receptorNombreEncrypted: encryptNullableString(parsedInvoice.receptor?.nombre),
+        receptorIdentificacionEncrypted: encryptNullableString(
+          parsedInvoice.receptor?.identificacion
+        ),
         
         // Base amounts for Hacienda declaration
-        subtotalGravado: parsedInvoice.subtotalGravado,
-        subtotalExento: parsedInvoice.subtotalExento,
+        subtotalGravadoEncrypted: encryptNullableNumber(parsedInvoice.subtotalGravado),
+        subtotalExentoEncrypted: encryptNullableNumber(parsedInvoice.subtotalExento),
         tarifaIVA: parsedInvoice.tarifaIVA,
         
         // Totals used by reports
-        totalImpuesto,
-        totalComprobante: parsedInvoice.totalComprobante,
+        totalImpuestoEncrypted: encryptNullableNumber(totalImpuesto),
+        totalComprobanteEncrypted: encryptNullableNumber(
+          parsedInvoice.totalComprobante
+        ),
         
         // Currency and exchange rate
         tipoMoneda: parsedInvoice.moneda,
         tipoCambio: exchangeRate,
-      },
+      } as any,
     });
     
     console.log(`✓ Created invoice ${invoice.id} for user ${userId} from ${filename}`);

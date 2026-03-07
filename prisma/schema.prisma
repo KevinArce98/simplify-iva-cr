@@ -33,22 +33,22 @@ model Invoice {
   tipo              String   // 'GASTO' o 'EMITIDA'
   
   // Invoice details
-  numeroConsecutivo String?
+  numeroConsecutivoEncrypted Json?
   clave             String?
   fechaEmision      DateTime?
-  emisorNombre      String?
-  emisorIdentificacion String?
-  receptorNombre    String?
-  receptorIdentificacion String?
+  emisorNombreEncrypted Json?
+  emisorIdentificacionEncrypted Json?
+  receptorNombreEncrypted Json?
+  receptorIdentificacionEncrypted Json?
   
   // Amounts - Base amounts (subtotals) for Hacienda declaration
-  subtotalGravado   Float?   @default(0)  // Base imponible para IVA (suma de bases con tarifa > 0)
-  subtotalExento    Float?   @default(0)  // Total sin IVA (tarifa 0%)
+  subtotalGravadoEncrypted Json?
+  subtotalExentoEncrypted Json?
   tarifaIVA         Float?   @default(13) // Tarifa de IVA predominante de la factura
   
   // Totals used by reports
-  totalImpuesto     Float?   @default(0)
-  totalComprobante  Float?   @default(0)
+  totalImpuestoEncrypted Json?
+  totalComprobanteEncrypted Json?
   
   // Exchange rate (for foreign currency)
   tipoMoneda        String?
