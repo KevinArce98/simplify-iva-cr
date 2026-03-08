@@ -7,6 +7,7 @@ import { authOptions } from '@/auth';
 import { redirect } from 'next/navigation';
 import HomePeriodSelector from './components/home-period-selector';
 import InvoiceEmailBox from '@/app/components/invoice-email-box';
+import PwaInstallPrompt from './components/pwa-install-prompt';
 import { prisma } from '@/lib/prisma';
 import { buildInvoiceEmailForTaxId } from '@/lib/invoice-email';
 
@@ -153,6 +154,8 @@ export default async function HomePage({
                 </div>
               </Link>
             </div>
+
+            <PwaInstallPrompt />
 
             {invoiceEmail && <InvoiceEmailBox invoiceEmail={invoiceEmail} />}
 
