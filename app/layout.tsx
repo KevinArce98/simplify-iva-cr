@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import { Montserrat } from 'next/font/google';
 import { Providers } from './providers';
@@ -14,6 +14,19 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: 'Simplify IVA CR',
   description: 'Cálculo mensual de IVA para profesionales independientes en Costa Rica',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Simplify IVA CR',
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#D97706',
 };
 
 export default function RootLayout({
