@@ -6,7 +6,8 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
   const isLoggedIn = !!token
   const isAuthPage = req.nextUrl.pathname.startsWith("/login") || 
-                      req.nextUrl.pathname.startsWith("/register")
+                      req.nextUrl.pathname.startsWith("/register") ||
+                      req.nextUrl.pathname.startsWith("/forgot-password")
   
   if (isAuthPage) {
     if (isLoggedIn) {

@@ -31,7 +31,7 @@ export default function LoginPage() {
         router.push('/');
         router.refresh();
       }
-    } catch (error) {
+    } catch {
       setError('Ocurrió un error. Por favor, intente de nuevo.');
     } finally {
       setIsLoading(false);
@@ -93,6 +93,15 @@ export default function LoginPage() {
               placeholder="••••••••"
               disabled={isLoading}
             />
+
+            <div className="-mt-2 text-right">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-(--primary) font-medium hover:text-(--primary-dark) transition-colors"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
 
             <button
               type="submit"
