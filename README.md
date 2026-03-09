@@ -162,6 +162,15 @@ For production deployment:
 - `pnpm start` - Start production server
 - `pnpm lint` - Run ESLint
 
+## Variables de entorno (password reset)
+
+Para habilitar el envío de códigos de recuperación por Mailgun:
+
+- `MAILGUN_API_KEY`
+- `MAILGUN_DOMAIN`
+- `MAILGUN_FROM_EMAIL` (ejemplo: `Simplify IVA <no-reply@tu-dominio.com>`)
+- `PASSWORD_RESET_SECRET` (recomendado, fallback a `NEXTAUTH_SECRET`)
+
 ## License
 
 This project is for demonstration purposes.
