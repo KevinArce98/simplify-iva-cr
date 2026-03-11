@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 import HomePeriodSelector from './components/home-period-selector';
 import InvoiceEmailBox from '@/app/components/invoice-email-box';
 import PwaInstallPrompt from './components/pwa-install-prompt';
+import HomeRefreshButton from './components/home-refresh-button';
 import { prisma } from '@/lib/prisma';
 import { buildInvoiceEmailForTaxId } from '@/lib/invoice-email';
 
@@ -43,6 +44,22 @@ export default async function HomePage({
     select: { invoiceEmail: true, taxId: true },
   });
 
+  const emailLogs = await prisma.emailLog.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+    select: {
+      id: true,
+      subject: true,
+      processedCount: true,
+      skippedCount: true,
+      failedCount: true,
+      success: true,
+      errorMessage: true,
+      createdAt: true,
+    },
+  });
+
   let invoiceEmail = user?.invoiceEmail || null;
 
   if (user?.taxId) {
@@ -76,7 +93,10 @@ export default async function HomePage({
                   Resumen de obligaciones tributarias para profesionales independientes
                 </p>
               </div>
-              <HomePeriodSelector currentMonth={currentMonth} currentYear={currentYear} />
+              <div className="flex items-center gap-3">
+                <HomeRefreshButton />
+                <HomePeriodSelector currentMonth={currentMonth} currentYear={currentYear} />
+              </div>
             </div>
 
             {/* Action Cards */}
@@ -157,7 +177,9 @@ export default async function HomePage({
 
             <PwaInstallPrompt />
 
-            {invoiceEmail && <InvoiceEmailBox invoiceEmail={invoiceEmail} />}
+            {invoiceEmail && (
+              <InvoiceEmailBox invoiceEmail={invoiceEmail} recentEmailLogs={emailLogs} />
+            )}
 
             {/* Summary Section */}
             <div className="flex flex-col gap-4">
