@@ -31,7 +31,17 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
     const documentNode = getDocumentNode(result);
 
     // Navigate the XML structure for FacturaElectronica
-    if (!documentNode || documentNode.type !== 'FacturaElectronica') {
+    if (!documentNode) {
+      throw new Error('Documento XML no reconocido');
+    }
+
+    if (documentNode.type === 'TiqueteElectronico') {
+      throw new Error(
+        'Este archivo es un TiqueteElectronico. Solo se permiten FacturaElectronica para procesar IVA.'
+      );
+    }
+
+    if (documentNode.type !== 'FacturaElectronica') {
       throw new Error('Documento no es una FacturaElectronica válida');
     }
 

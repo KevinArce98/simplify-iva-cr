@@ -246,9 +246,11 @@ async function processXMLAttachment(
 
     // Only process electronic invoice documents
     if (docType !== 'FacturaElectronica') {
-      const reason = docType
-        ? `${docType} documents are not supported`
-        : 'Unknown XML document type';
+      const reason = docType === 'TiqueteElectronico'
+        ? 'Se recibió un TiqueteElectronico. Solo se procesa FacturaElectronica.'
+        : docType
+          ? `${docType} documents are not supported`
+          : 'Unknown XML document type';
 
       return {
         filename,
@@ -420,8 +422,17 @@ export async function processInboundEmail(
       }
     }
     
+    const emailSucceeded = failedCount === 0;
+    const failedResults = results.filter((result) => result.status === 'error');
+    const failureSummary =
+      failedResults.length > 0
+        ? failedResults
+            .map((result) => `${result.filename}: ${result.error || 'Unknown error'}`)
+            .join(' | ')
+        : undefined;
+
     return {
-      success: true,
+      success: emailSucceeded,
       recipient: recipientEmail,
       userId: user.id,
       totalAttachments: attachments.length,
@@ -429,6 +440,7 @@ export async function processInboundEmail(
       skippedAttachments: skippedCount,
       failedAttachments: failedCount,
       results,
+      error: failureSummary,
     };
   } catch (error) {
     console.error('Error processing inbound email:', error);
