@@ -148,24 +148,6 @@ export default async function ReportsPage({
                 <Suspense fallback={<div className="h-10" />}>
                   <PeriodSelector />
                 </Suspense>
-                <div className="flex gap-3">
-                  <button
-                    className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-white border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled
-                  >
-                    <span className="material-symbols-outlined text-[18px]">print</span>
-                    <span>Imprimir</span>
-                  </button>
-                  <button
-                    className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-(--primary) hover:bg-(--primary-dark) text-white text-sm font-bold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      download
-                    </span>
-                    <span>Exportar Excel</span>
-                  </button>
-                </div>
               </div>
             </div>
 
