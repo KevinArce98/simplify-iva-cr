@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 type InvoiceEmailBoxProps = {
@@ -36,15 +37,22 @@ export default function InvoiceEmailBox({
     <div className="bg-white rounded-xl border border-[#d0d7e7] shadow-sm p-5 flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3 min-w-0">
-          <span className="material-symbols-outlined text-(--primary)" style={{ fontSize: 24 }}>
+          <span
+            className="material-symbols-outlined text-(--primary)"
+            style={{ fontSize: 24 }}
+          >
             alternate_email
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-[#0e121b]">Correo para recibir facturas</p>
+            <p className="text-sm font-semibold text-[#0e121b]">
+              Correo para recibir facturas
+            </p>
             <p className="text-xs text-[#4d6599] mt-1">
               Reenvía tus correos con XML a esta dirección:
             </p>
-            <p className="text-sm font-mono text-[#0e121b] mt-1 truncate">{invoiceEmail}</p>
+            <p className="text-sm font-mono text-[#0e121b] mt-1 truncate">
+              {invoiceEmail}
+            </p>
           </div>
         </div>
 
@@ -93,13 +101,25 @@ export default function InvoiceEmailBox({
                 </div>
 
                 <p className="text-xs text-[#4d6599] mt-1">
-                  Procesadas: {log.processedCount} · Omitidas: {log.skippedCount} · Errores:{' '}
-                  {log.failedCount}
+                  Procesadas: {log.processedCount} · Omitidas: {log.skippedCount} ·
+                  Errores: {log.failedCount}
                 </p>
 
                 {!log.success && log.errorMessage && (
                   <p className="text-xs text-red-700 mt-1">{log.errorMessage}</p>
                 )}
+
+                <div className="mt-2">
+                  <Link
+                    href={`/email-logs/${log.id}`}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-(--primary) hover:text-(--primary-dark)"
+                  >
+                    Ver detalle
+                    <span className="material-symbols-outlined text-[16px]">
+                      open_in_new
+                    </span>
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
