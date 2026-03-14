@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
           failedCount: processingResult.failedAttachments,
           success: processingResult.success,
           errorMessage: processingResult.error,
+          skippedDetails: processingResult.skippedDetails,
           processingTimeMs: processingTime,
           userId: processingResult.userId,
         },

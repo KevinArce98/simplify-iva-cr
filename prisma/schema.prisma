@@ -89,7 +89,8 @@ model EmailLog {
   skippedCount      Int      @default(0) // Skipped attachments (PDFs, duplicates, etc)
   failedCount       Int      @default(0) // Failed attachments
   success           Boolean  @default(false) // Overall success status
-  errorMessage      String?             // Error message if failed
+  errorMessage      String?             // Error message if failed (pipe-separated)
+  skippedDetails    String?             // Skipped file reasons (pipe-separated "filename: reason")
   processingTimeMs  Int?                // Processing time in milliseconds
   userId            String?             // Associated user (if found)
   createdAt         DateTime @default(now())
