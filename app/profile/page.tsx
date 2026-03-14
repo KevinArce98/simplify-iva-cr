@@ -116,7 +116,7 @@ export default async function ProfilePage({
 
       <div className="relative flex h-screen w-full flex-row overflow-hidden md:pl-64">
         <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
-          <div className="flex flex-col w-full max-w-4xl mx-auto px-4 md:px-8 py-20 md:py-8 gap-6">
+          <div className="flex flex-col w-full max-w-4xl mx-auto px-4 md:px-8 py-24 md:py-8 gap-6">
             <div className="flex flex-col gap-1">
               <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">
                 Perfil

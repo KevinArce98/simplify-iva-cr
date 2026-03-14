@@ -56,7 +56,7 @@ export default async function ReportsPage({
       <div className="relative flex h-screen w-full flex-row overflow-hidden md:pl-64">
         {/* Main Content */}
         <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
-          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-20 md:py-8 gap-8">
+          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-24 md:py-8 gap-8">
             {/* Due Date Alert */}
             {summary.estaProximoVencimiento && !summary.estaVencido && (
               <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg shadow-sm">
