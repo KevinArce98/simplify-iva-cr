@@ -159,7 +159,7 @@ export default function UploadPage() {
             </div>
           )}
 
-          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-20 md:py-8 gap-8">
+          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-24 md:py-8 gap-8">
           {/* Page Heading */}
           <div className="flex flex-col gap-3">
             <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">

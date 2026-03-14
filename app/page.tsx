@@ -358,9 +358,9 @@ export default async function HomePage({
                         key={invoice.id}
                         className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between"
                       >
-                        <div className="flex items-center gap-4 flex-1">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center ${
                               invoice.tipo === 'GASTO'
                                 ? 'bg-(--primary) text-white'
                                 : 'bg-green-600 text-white'
@@ -374,12 +374,21 @@ export default async function HomePage({
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="text-sm font-semibold text-[#0e121b] truncate">
-                                {invoice.tipo === 'GASTO'
-                                  ? invoice.proveedor || 'Proveedor desconocido'
-                                  : invoice.cliente || 'Cliente desconocido'}
-                              </p>
+                            <p className="text-sm font-semibold text-[#0e121b] truncate mb-0.5">
+                              {invoice.tipo === 'GASTO'
+                                ? invoice.proveedor || 'Proveedor desconocido'
+                                : invoice.cliente || 'Cliente desconocido'}
+                            </p>
+                            <span
+                              className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold mb-1 md:hidden ${
+                                invoice.tipo === 'GASTO'
+                                  ? 'bg-(--primary) text-white'
+                                  : 'bg-green-600 text-white'
+                              }`}
+                            >
+                              {invoice.tipo === 'GASTO' ? 'Compra' : 'Venta'}
+                            </span>
+                            <div className="hidden md:flex items-center gap-2 mb-1">
                               <span
                                 className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${
                                   invoice.tipo === 'GASTO'
@@ -390,7 +399,7 @@ export default async function HomePage({
                                 {invoice.tipo === 'GASTO' ? 'Compra' : 'Venta'}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3 text-xs text-[#4d6599]">
+                            <div className="flex flex-col md:flex-row md:items-center gap-0.5 md:gap-3 text-xs text-[#4d6599]">
                               <span className="flex items-center gap-1">
                                 <span
                                   className="material-symbols-outlined"
@@ -412,13 +421,13 @@ export default async function HomePage({
                                   >
                                     tag
                                   </span>
-                                  {invoice.numeroFactura}
+                                  <span className="truncate">{invoice.numeroFactura}</span>
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="text-right ml-4">
+                        <div className="text-right ml-3 shrink-0">
                           <p className="text-sm font-bold text-[#0e121b]">
                             {formatCRC(invoice.totalCRC)}
                           </p>
