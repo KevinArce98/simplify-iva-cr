@@ -75,7 +75,21 @@ export default function InvoiceEmailBox({
           </p>
 
           <div className="flex flex-col gap-2">
-            {recentEmailLogs.map((log) => (
+            {recentEmailLogs.map((log) => {
+              const allSkipped =
+                !log.success && log.failedCount === 0 && log.processedCount === 0;
+              const iconName = log.success
+                ? 'check_circle'
+                : allSkipped
+                  ? 'block'
+                  : 'error';
+              const iconColor = log.success
+                ? 'text-green-600'
+                : allSkipped
+                  ? 'text-amber-600'
+                  : 'text-red-600';
+
+              return (
               <div
                 key={log.id}
                 className="rounded-lg border border-[#d0d7e7] bg-[#f8f9fc] px-3 py-2"
@@ -83,12 +97,10 @@ export default function InvoiceEmailBox({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className={`material-symbols-outlined ${
-                        log.success ? 'text-green-600' : 'text-red-600'
-                      }`}
+                      className={`material-symbols-outlined ${iconColor}`}
                       style={{ fontSize: 18 }}
                     >
-                      {log.success ? 'check_circle' : 'error'}
+                      {iconName}
                     </span>
                     <p className="text-sm font-medium text-[#0e121b] truncate">
                       {log.subject || '(sin asunto)'}
@@ -105,8 +117,14 @@ export default function InvoiceEmailBox({
                   Errores: {log.failedCount}
                 </p>
 
-                {!log.success && log.errorMessage && (
+                {!log.success && !allSkipped && log.errorMessage && (
                   <p className="text-xs text-red-700 mt-1">{log.errorMessage}</p>
+                )}
+
+                {allSkipped && (
+                  <p className="text-xs text-amber-700 mt-1">
+                    Todos los archivos fueron omitidos. Ver detalle para más información.
+                  </p>
                 )}
 
                 <div className="mt-2">
@@ -121,7 +139,8 @@ export default function InvoiceEmailBox({
                   </Link>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

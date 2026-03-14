@@ -82,7 +82,7 @@ export default async function HomePage({
       <div className="relative flex h-screen w-full flex-row overflow-hidden md:pl-64">
         {/* Main Content */}
         <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
-          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-20 md:py-8 gap-8">
+          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-24 md:py-8 gap-8">
             {/* Page Heading */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="flex flex-col gap-1">

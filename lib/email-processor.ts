@@ -54,6 +54,7 @@ export type EmailProcessingResult = {
   failedAttachments: number;
   results: AttachmentProcessingResult[];
   error?: string;
+  skippedDetails?: string;
 };
 
 /**
@@ -422,12 +423,22 @@ export async function processInboundEmail(
       }
     }
     
-    const emailSucceeded = failedCount === 0;
+    // Success only if at least one invoice was processed and none failed
+    const emailSucceeded = processedCount > 0 && failedCount === 0;
+
     const failedResults = results.filter((result) => result.status === 'error');
     const failureSummary =
       failedResults.length > 0
         ? failedResults
             .map((result) => `${result.filename}: ${result.error || 'Unknown error'}`)
+            .join(' | ')
+        : undefined;
+
+    const skippedResults = results.filter((result) => result.status === 'skipped');
+    const skippedSummary =
+      skippedResults.length > 0
+        ? skippedResults
+            .map((result) => `${result.filename}: ${result.reason || 'Omitido'}`)
             .join(' | ')
         : undefined;
 
@@ -441,6 +452,7 @@ export async function processInboundEmail(
       failedAttachments: failedCount,
       results,
       error: failureSummary,
+      skippedDetails: skippedSummary,
     };
   } catch (error) {
     console.error('Error processing inbound email:', error);

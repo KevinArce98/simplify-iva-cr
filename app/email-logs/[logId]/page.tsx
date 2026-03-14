@@ -40,6 +40,8 @@ export default async function EmailLogDetailPage({ params }: EmailLogDetailPageP
     notFound();
   }
 
+  const allSkipped = !log.success && log.failedCount === 0 && log.processedCount === 0;
+
   const statusConfig = log.success
     ? {
         icon: 'check_circle',
@@ -47,14 +49,26 @@ export default async function EmailLogDetailPage({ params }: EmailLogDetailPageP
         iconColor: 'text-green-600',
         label: 'Procesado correctamente',
       }
-    : {
-        icon: 'error',
-        bg: 'bg-red-50',
-        iconColor: 'text-red-600',
-        label: 'Hubo problemas al procesar este correo',
-      };
+    : allSkipped
+      ? {
+          icon: 'block',
+          bg: 'bg-amber-50',
+          iconColor: 'text-amber-600',
+          label: 'No se procesó ningún archivo',
+        }
+      : {
+          icon: 'error',
+          bg: 'bg-red-50',
+          iconColor: 'text-red-600',
+          label: 'Hubo problemas al procesar este correo',
+        };
 
   const errorDetails = log.errorMessage
+    ?.split('|')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const skippedDetails = log.skippedDetails
     ?.split('|')
     .map((part) => part.trim())
     .filter(Boolean);
@@ -75,7 +89,7 @@ export default async function EmailLogDetailPage({ params }: EmailLogDetailPageP
 
       <div className="relative flex min-h-screen w-full flex-row overflow-hidden md:pl-64 bg-[#f8f9fc]">
         <div className="flex-1 flex flex-col h-full overflow-y-auto">
-          <div className="w-full max-w-300 mx-auto px-4 md:px-8 py-20 md:py-12 flex flex-col gap-6">
+          <div className="w-full max-w-300 mx-auto px-4 md:px-8 py-24 md:py-12 flex flex-col gap-6">
             <div className="flex items-center gap-3 text-sm text-[#4d6599]">
               <Link
                 href="/"
@@ -115,7 +129,7 @@ export default async function EmailLogDetailPage({ params }: EmailLogDetailPageP
                   </div>
                   <div className="text-sm text-[#4d6599] bg-[#f8f9fc] border border-[#e1e6f2] rounded-xl px-4 py-3">
                     ID del mensaje:{' '}
-                    <span className="font-mono text-[#0e121b]">{log.messageId}</span>
+                    <span className="font-mono break-all text-[#0e121b]">{log.messageId}</span>
                   </div>
                 </div>
 
@@ -201,6 +215,36 @@ export default async function EmailLogDetailPage({ params }: EmailLogDetailPageP
                         utiliza el buscador de facturas.
                       </p>
                     </div>
+                  ) : allSkipped ? (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-2 text-sm text-[#a16207] bg-amber-50 border border-amber-100 rounded-xl p-4">
+                        <div className="flex items-center gap-2 font-medium">
+                          <span className="material-symbols-outlined text-[20px]">
+                            block
+                          </span>
+                          Ningún archivo fue procesado; todos fueron omitidos.
+                        </div>
+                        <p>
+                          Asegúrate de adjuntar archivos XML válidos de factura electrónica.
+                          Los PDFs y otros formatos no se procesan.
+                        </p>
+                      </div>
+                      {skippedDetails && skippedDetails.length > 0 && (
+                        <ul className="flex flex-col gap-2 text-sm text-[#0e121b]">
+                          {skippedDetails.map((detail) => (
+                            <li
+                              key={detail}
+                              className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 flex gap-2"
+                            >
+                              <span className="material-symbols-outlined text-[18px] text-amber-600">
+                                do_not_disturb_on
+                              </span>
+                              <span>{detail}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   ) : errorDetails && errorDetails.length > 0 ? (
                     <div className="flex flex-col gap-3">
                       <p className="text-sm text-[#4d6599]">
@@ -219,6 +263,26 @@ export default async function EmailLogDetailPage({ params }: EmailLogDetailPageP
                           </li>
                         ))}
                       </ul>
+                      {skippedDetails && skippedDetails.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                          <p className="text-sm text-[#4d6599]">
+                            Además, los siguientes archivos fueron omitidos:
+                          </p>
+                          <ul className="flex flex-col gap-2 text-sm text-[#0e121b]">
+                            {skippedDetails.map((detail) => (
+                              <li
+                                key={detail}
+                                className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 flex gap-2"
+                              >
+                                <span className="material-symbols-outlined text-[18px] text-amber-600">
+                                  do_not_disturb_on
+                                </span>
+                                <span>{detail}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2 text-sm text-[#a16207] bg-amber-50 border border-amber-100 rounded-xl p-4">
@@ -236,13 +300,6 @@ export default async function EmailLogDetailPage({ params }: EmailLogDetailPageP
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div className="flex flex-col gap-2 text-xs text-[#9aa7c4]">
-                <p>
-                  ¿Aún necesitas ayuda? Envíanos este ID de mensaje ({log.messageId}) para
-                  que podamos rastrear el correo rápidamente.
-                </p>
               </div>
             </div>
           </div>
