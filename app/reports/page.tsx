@@ -1,14 +1,14 @@
 import {
   getInvoicesByPeriod,
   getTaxSummary,
-  getAllInvoices,
+  hasInvoices,
   getAvailablePeriods,
 } from '../actions';
 import { formatCRC, getMonthName, formatDueDate } from '@/lib/utils';
 import PeriodSelector from './period-selector';
 import { Suspense } from 'react';
-import { Sidebar } from '../components/sidebar';
 import { InvoicesTable } from './invoices-table';
+import AppShell from '../components/app-shell';
 
 export default async function ReportsPage({
   searchParams,
@@ -30,7 +30,7 @@ export default async function ReportsPage({
 
   const summary = await getTaxSummary(mes, año);
   const invoices = await getInvoicesByPeriod(mes, año);
-  const allInvoices = await getAllInvoices();
+  const anyInvoices = await hasInvoices();
   const availablePeriods = await getAvailablePeriods();
 
   const ivaDebitoPercentage =
@@ -49,14 +49,7 @@ export default async function ReportsPage({
       : 0;
 
   return (
-    <>
-      {/* Sidebar */}
-      <Sidebar />
-
-      <div className="relative flex h-screen w-full flex-row overflow-hidden md:pl-64">
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
-          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-24 md:py-8 gap-8">
+    <AppShell>
             {/* Due Date Alert */}
             {summary.estaProximoVencimiento && !summary.estaVencido && (
               <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg shadow-sm">
@@ -320,14 +313,11 @@ export default async function ReportsPage({
                 ivaDebito: summary.ivaDebito,
                 ivaCredito: summary.ivaCredito,
               }}
-              allInvoices={allInvoices}
+              hasAnyInvoices={anyInvoices}
               availablePeriods={availablePeriods}
               currentMes={mes}
               currentAño={año}
             />
-          </div>
-        </div>
-      </div>
-    </>
+    </AppShell>
   );
 }

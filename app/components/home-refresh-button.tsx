@@ -26,7 +26,7 @@ export default function HomeRefreshButton() {
       >
         refresh
       </span>
-      <span>{isRefreshing ? 'Actualizando...' : 'Refresh'}</span>
+      <span>{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
     </button>
   );
 }

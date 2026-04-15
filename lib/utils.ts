@@ -1,37 +1,40 @@
-/**
- * Formats a number as Costa Rican colones
- */
+const _crcFormatter = new Intl.NumberFormat('es-CR', {
+  style: 'currency',
+  currency: 'CRC',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const _usdFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const _dateFormatter = new Intl.DateTimeFormat('es-CR', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+
+const _dueDateFormatter = new Intl.DateTimeFormat('es-CR', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
 export function formatCRC(amount: number): string {
-  return new Intl.NumberFormat('es-CR', {
-    style: 'currency',
-    currency: 'CRC',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return _crcFormatter.format(amount);
 }
 
-/**
- * Formats a number as US dollars
- */
 export function formatUSD(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return _usdFormatter.format(amount);
 }
 
-/**
- * Formats a date string or Date object to Spanish locale
- */
 export function formatDate(dateString: string | Date): string {
   const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-  return new Intl.DateTimeFormat('es-CR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(date);
+  return _dateFormatter.format(date);
 }
 
 /**
@@ -120,11 +123,7 @@ export function isPastDueDate(mes: number, año: number): boolean {
  */
 export function formatDueDate(mes: number, año: number): string {
   const dueDate = getIVADueDate(mes, año);
-  return new Intl.DateTimeFormat('es-CR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(dueDate);
+  return _dueDateFormatter.format(dueDate);
 }
 
 /**

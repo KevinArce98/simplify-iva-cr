@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { processXMLFile, type ProcessFileResult } from '../actions';
 import type { InvoiceType, UploadedFile } from '@/lib/types';
 import { formatFileSize } from '@/lib/utils';
-import { Sidebar } from '../components/sidebar';
+import AppShell from '../components/app-shell';
 
 export default function UploadPage() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -134,16 +134,15 @@ export default function UploadPage() {
   };
 
   return (
-    <>
-      {/* Sidebar */}
-      <Sidebar />
-
-      <div className="relative flex h-screen w-full flex-row overflow-hidden md:pl-64">
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
+    <AppShell>
           {/* Full Screen Loader */}
           {isProcessing && (
-            <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div
+              role="status"
+              aria-busy="true"
+              aria-label="Procesando archivos"
+              className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            >
               <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl">
                 <div className="relative size-16">
                   <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
@@ -158,8 +157,6 @@ export default function UploadPage() {
               </div>
             </div>
           )}
-
-          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-24 md:py-8 gap-8">
           {/* Page Heading */}
           <div className="flex flex-col gap-3">
             <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">
@@ -319,7 +316,7 @@ export default function UploadPage() {
                             {formatFileSize(file.size)}
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1" aria-live="polite" aria-atomic="true">
                               <div className="flex items-center gap-2">
                               {file.status === 'PENDING' && (
                                 <>
@@ -413,9 +410,6 @@ export default function UploadPage() {
               </div>
             </div>
           )}
-        </div>
-      </div>
-      </div>
-    </>
+    </AppShell>
   );
 }

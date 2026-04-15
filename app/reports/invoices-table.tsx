@@ -3,26 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { formatCRC, formatDate, getMonthName } from '@/lib/utils';
-
-type Invoice = {
-  id: string;
-  tipo: 'GASTO' | 'EMITIDA';
-  fecha: Date | string;
-  proveedor?: string;
-  cliente?: string;
-  numeroFactura?: string;
-  moneda: 'CRC' | 'USD' | string;
-  ivaOriginal: number;
-  totalOriginal: number;
-  tipoCambio: number;
-  ivaCRC: number;
-  totalCRC: number;
-  subtotalGravado: number;
-  subtotalExento: number;
-  subtotalGravadoCRC: number;
-  subtotalExentoCRC: number;
-  tarifaIVA: number;
-};
+import type { Invoice } from '@/lib/types';
 
 interface InvoicesTableProps {
   invoices: Invoice[];
@@ -34,7 +15,7 @@ interface InvoicesTableProps {
     ivaDebito: number;
     ivaCredito: number;
   };
-  allInvoices: Invoice[];
+  hasAnyInvoices: boolean;
   availablePeriods: Array<{ mes: number; año: number; count: number }>;
   currentMes: number;
   currentAño: number;
@@ -43,7 +24,7 @@ interface InvoicesTableProps {
 export function InvoicesTable({
   invoices,
   summary,
-  allInvoices,
+  hasAnyInvoices,
   availablePeriods,
   currentMes,
   currentAño,
@@ -129,7 +110,7 @@ export function InvoicesTable({
               No hay transacciones para {getMonthName(currentMes)} {currentAño}
             </p>
             <p className="text-[#4d6599] text-sm mb-4">
-              {allInvoices.length > 0
+              {hasAnyInvoices
                 ? 'Tienes facturas cargadas en otros períodos'
                 : 'Sube archivos XML para ver el desglose de transacciones'}
             </p>
@@ -296,21 +277,10 @@ export function InvoicesTable({
       )}
 
       {filteredInvoices.length > 0 && (
-        <div className="flex justify-between items-center px-1">
+        <div className="px-1">
           <p className="text-sm text-[#4d6599]">
             Mostrando {filteredInvoices.length} de {invoices.length} resultados
           </p>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 rounded bg-white border border-gray-200 text-sm hover:bg-gray-50 disabled:opacity-50">
-              Anterior
-            </button>
-            <button className="px-3 py-1 rounded bg-(--primary) text-white text-sm font-medium">
-              1
-            </button>
-            <button className="px-3 py-1 rounded bg-white border border-gray-200 text-sm hover:bg-gray-50 disabled:opacity-50">
-              Siguiente
-            </button>
-          </div>
         </div>
       )}
     </div>

@@ -2,6 +2,8 @@ import NextAuth from 'next-auth';
 import type { NextAuthOptions } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
+import { cache } from 'react';
+import { getServerSession } from 'next-auth';
 import { prisma } from './lib/prisma';
 
 export const authOptions: NextAuthOptions = {
@@ -66,3 +68,5 @@ export const authOptions: NextAuthOptions = {
 };
 
 export default NextAuth(authOptions);
+
+export const getSession = cache(() => getServerSession(authOptions));

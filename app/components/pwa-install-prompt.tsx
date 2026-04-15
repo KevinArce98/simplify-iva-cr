@@ -11,24 +11,20 @@ const DISMISS_KEY = 'pwa-install-dismissed';
 
 export default function PwaInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOS] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return /iPad|iPhone|iPod/.test(window.navigator.userAgent);
-  });
-  const [isStandalone] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return (
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-    );
-  });
-  const [isDismissed, setIsDismissed] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return window.localStorage.getItem(DISMISS_KEY) === '1';
-  });
+  const [clientState, setClientState] = useState<{
+    isIOS: boolean;
+    isStandalone: boolean;
+    isDismissed: boolean;
+  } | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    const isIOS = /iPad|iPhone|iPod/.test(window.navigator.userAgent);
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const isDismissed = window.localStorage.getItem(DISMISS_KEY) === '1';
+
+    setClientState({ isIOS, isStandalone, isDismissed });
 
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
@@ -36,15 +32,12 @@ export default function PwaInstallPrompt() {
     };
 
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-    };
+    return () => window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
   }, []);
 
   const dismissPrompt = () => {
     window.localStorage.setItem(DISMISS_KEY, '1');
-    setIsDismissed(true);
+    setClientState((prev) => prev ? { ...prev, isDismissed: true } : prev);
   };
 
   const installApp = async () => {
@@ -53,17 +46,13 @@ export default function PwaInstallPrompt() {
     const result = await installEvent.userChoice;
     if (result.outcome === 'accepted') {
       setInstallEvent(null);
-      setIsDismissed(true);
+      setClientState((prev) => prev ? { ...prev, isDismissed: true } : prev);
     }
   };
 
-  if (isStandalone || isDismissed) {
-    return null;
-  }
-
-  if (!isIOS && !installEvent) {
-    return null;
-  }
+  if (!clientState) return null;
+  if (clientState.isStandalone || clientState.isDismissed) return null;
+  if (!clientState.isIOS && !installEvent) return null;
 
   return (
     <div className="rounded-xl border border-[#d0d7e7] bg-white p-4 shadow-sm">
@@ -76,9 +65,9 @@ export default function PwaInstallPrompt() {
           </div>
           <div>
             <p className="text-sm font-semibold text-[#0e121b]">Instalar app móvil</p>
-            {isIOS ? (
+            {clientState.isIOS ? (
               <p className="mt-1 text-xs text-[#4d6599]">
-                En iPhone/iPad: toca compartir y luego “Agregar a pantalla de inicio”.
+                En iPhone/iPad: toca compartir y luego "Agregar a pantalla de inicio".
               </p>
             ) : (
               <p className="mt-1 text-xs text-[#4d6599]">
@@ -100,7 +89,7 @@ export default function PwaInstallPrompt() {
         </button>
       </div>
 
-      {!isIOS && installEvent && (
+      {!clientState.isIOS && installEvent && (
         <button
           type="button"
           onClick={installApp}

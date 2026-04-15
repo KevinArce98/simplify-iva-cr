@@ -4,8 +4,7 @@ import { parseInvoiceXML } from '@/lib/xml-parser';
 import type { Currency, InvoiceType, UploadedFile } from '@/lib/types';
 import { prisma } from '@/lib/prisma';
 import type { Invoice } from '@prisma/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/auth';
+import { getSession } from '@/auth';
 import { getIVADueDate, getMonthName } from '@/lib/utils';
 import {
   decryptEncryptedNumber,
@@ -105,11 +104,11 @@ function mapInvoiceForClient(invoice: Invoice) {
   return {
     id: invoice.id,
     tipo: invoice.tipo as InvoiceType,
-    fecha: invoice.fechaEmision || new Date(),
+    fecha: invoice.fechaEmision?.toISOString() || new Date().toISOString(),
     proveedor: invoice.tipo === 'GASTO' ? emisorNombre || undefined : undefined,
     cliente: invoice.tipo === 'EMITIDA' ? receptorNombre || undefined : undefined,
     numeroFactura: numeroConsecutivo || undefined,
-    moneda: invoice.tipoMoneda || 'CRC',
+    moneda: (invoice.tipoMoneda as Currency) || 'CRC',
     ivaOriginal: totalImpuesto,
     totalOriginal: totalComprobante,
     tipoCambio,
@@ -131,7 +130,7 @@ export async function processXMLFile(
   fileContent: string,
   tipo: InvoiceType
 ): Promise<ProcessFileResult> {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
   if (!session?.user?.id) {
     throw new Error('Usuario no autenticado');
@@ -277,7 +276,7 @@ export async function processXMLFile(
  * Gets all invoices for a specific period
  */
 export async function getInvoicesByPeriod(mes: number, año: number) {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
   if (!session?.user?.id) {
     return [];
@@ -308,7 +307,7 @@ export async function getInvoicesByPeriod(mes: number, año: number) {
  * Includes subtotals for Hacienda declaration
  */
 export async function getTaxSummary(mes: number, año: number) {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   const period = normalizePeriod(mes, año);
 
   // Calculate dates and due date info
@@ -358,54 +357,42 @@ export async function getTaxSummary(mes: number, año: number) {
     },
   });
 
-  const compras = invoices.filter((inv: Invoice) => inv.tipo === 'GASTO');
-  const ventas = invoices.filter((inv: Invoice) => inv.tipo === 'EMITIDA');
+  const totals = invoices.reduce(
+    (acc: {
+      ivaCompras: number;
+      ivaVentas: number;
+      subtotalVentasGravadas: number;
+      subtotalVentasExentas: number;
+      subtotalComprasGravadas: number;
+      subtotalComprasExentas: number;
+    }, inv) => {
+      const tc = (inv as Invoice).tipoCambio || 1;
+      const iva = encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * tc;
+      const gravado = encryptedNumber((inv as any).subtotalGravadoEncrypted, 0) * tc;
+      const exento = encryptedNumber((inv as any).subtotalExentoEncrypted, 0) * tc;
 
-  // IVA calculations
-  const ivaCompras = compras.reduce(
-    (sum: number, inv) =>
-      sum +
-      encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * (inv.tipoCambio || 1),
-    0
+      if ((inv as Invoice).tipo === 'GASTO') {
+        acc.ivaCompras += iva;
+        acc.subtotalComprasGravadas += gravado;
+        acc.subtotalComprasExentas += exento;
+      } else {
+        acc.ivaVentas += iva;
+        acc.subtotalVentasGravadas += gravado;
+        acc.subtotalVentasExentas += exento;
+      }
+      return acc;
+    },
+    {
+      ivaCompras: 0,
+      ivaVentas: 0,
+      subtotalVentasGravadas: 0,
+      subtotalVentasExentas: 0,
+      subtotalComprasGravadas: 0,
+      subtotalComprasExentas: 0,
+    }
   );
 
-  const ivaVentas = ventas.reduce(
-    (sum: number, inv) =>
-      sum +
-      encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * (inv.tipoCambio || 1),
-    0
-  );
-
-  // Subtotals for Hacienda - Base imponible (monto antes de IVA)
-  const subtotalVentasGravadas = ventas.reduce(
-    (sum: number, inv) =>
-      sum +
-      encryptedNumber((inv as any).subtotalGravadoEncrypted, 0) *
-        (inv.tipoCambio || 1),
-    0
-  );
-
-  const subtotalVentasExentas = ventas.reduce(
-    (sum: number, inv) =>
-      sum +
-      encryptedNumber((inv as any).subtotalExentoEncrypted, 0) * (inv.tipoCambio || 1),
-    0
-  );
-
-  const subtotalComprasGravadas = compras.reduce(
-    (sum: number, inv) =>
-      sum +
-      encryptedNumber((inv as any).subtotalGravadoEncrypted, 0) *
-        (inv.tipoCambio || 1),
-    0
-  );
-
-  const subtotalComprasExentas = compras.reduce(
-    (sum: number, inv) =>
-      sum +
-      encryptedNumber((inv as any).subtotalExentoEncrypted, 0) * (inv.tipoCambio || 1),
-    0
-  );
+  const { ivaCompras, ivaVentas, subtotalVentasGravadas, subtotalVentasExentas, subtotalComprasGravadas, subtotalComprasExentas } = totals;
 
   const ivaPagar = Math.max(0, ivaVentas - ivaCompras);
   const creditoFiscal = Math.max(0, ivaCompras - ivaVentas);
@@ -462,10 +449,27 @@ export async function getTaxSummary(mes: number, año: number) {
 }
 
 /**
+ * Returns true if the user has any invoices (avoids fetching all rows)
+ */
+export async function hasInvoices(): Promise<boolean> {
+  const session = await getSession();
+
+  if (!session?.user?.id) {
+    return false;
+  }
+
+  const count = await prisma.invoice.count({
+    where: { userId: session.user.id },
+  });
+
+  return count > 0;
+}
+
+/**
  * Gets all invoices
  */
 export async function getAllInvoices() {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
   if (!session?.user?.id) {
     return [];
@@ -487,7 +491,7 @@ export async function getAllInvoices() {
  * Gets recent invoices (last 5)
  */
 export async function getRecentInvoices() {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
   if (!session?.user?.id) {
     return [];
@@ -510,7 +514,7 @@ export async function getRecentInvoices() {
  * Gets available periods (months) with invoices
  */
 export async function getAvailablePeriods() {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
   if (!session?.user?.id) {
     return [];
@@ -550,10 +554,14 @@ export async function getAvailablePeriods() {
 }
 
 /**
- * Clears all invoices (for testing)
+ * Clears all invoices (dev/testing only)
  */
 export async function clearAllInvoices() {
-  const session = await getServerSession(authOptions);
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
+  const session = await getSession();
 
   if (!session?.user?.id) {
     return;
@@ -570,7 +578,7 @@ export async function clearAllInvoices() {
  * Updates the user's saldo a favor after declaring taxes
  */
 export async function actualizarSaldoAFavor(mes: number, año: number) {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
   if (!session?.user?.id) {
     throw new Error('Usuario no autenticado');
