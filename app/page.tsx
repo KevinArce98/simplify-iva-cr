@@ -1,23 +1,21 @@
 import Link from 'next/link';
 import { getTaxSummary, getRecentInvoices } from './actions';
 import { formatCRC, getMonthName } from '@/lib/utils';
-import { Sidebar } from './components/sidebar';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/auth';
+import { getSession } from '@/auth';
 import { redirect } from 'next/navigation';
 import HomePeriodSelector from './components/home-period-selector';
 import InvoiceEmailBox from '@/app/components/invoice-email-box';
 import PwaInstallPrompt from './components/pwa-install-prompt';
 import HomeRefreshButton from './components/home-refresh-button';
+import AppShell from './components/app-shell';
 import { prisma } from '@/lib/prisma';
-import { buildInvoiceEmailForTaxId } from '@/lib/invoice-email';
 
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<{ mes?: string; año?: string }>;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
   if (!session) {
     redirect('/login');
@@ -60,29 +58,10 @@ export default async function HomePage({
     },
   });
 
-  let invoiceEmail = user?.invoiceEmail || null;
-
-  if (user?.taxId) {
-    const expectedInvoiceEmail = buildInvoiceEmailForTaxId(user.taxId);
-
-    if (invoiceEmail !== expectedInvoiceEmail) {
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: { invoiceEmail: expectedInvoiceEmail },
-      });
-      invoiceEmail = expectedInvoiceEmail;
-    }
-  }
+  const invoiceEmail = user?.invoiceEmail || null;
 
   return (
-    <>
-      {/* Sidebar */}
-      <Sidebar />
-
-      <div className="relative flex h-screen w-full flex-row overflow-hidden md:pl-64">
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#f8f9fc]">
-          <div className="flex flex-col w-full max-w-300 mx-auto px-4 md:px-8 py-24 md:py-8 gap-8">
+    <AppShell>
             {/* Page Heading */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="flex flex-col gap-1">
@@ -455,9 +434,6 @@ export default async function HomePage({
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
-    </>
+    </AppShell>
   );
 }

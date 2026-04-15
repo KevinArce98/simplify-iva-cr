@@ -2,11 +2,12 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import CustomSelect from '../components/custom-select';
+import { getMonthName } from '@/lib/utils';
 
 export default function PeriodSelector() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const now = new Date();
   const currentMes = searchParams.get('mes') || String(now.getMonth() + 1);
   const currentAño = searchParams.get('año') || String(now.getFullYear());
@@ -15,20 +16,10 @@ export default function PeriodSelector() {
     router.push(`/reports?mes=${mes}&año=${año}`);
   };
 
-  const meses = [
-    { value: '1', label: 'Enero' },
-    { value: '2', label: 'Febrero' },
-    { value: '3', label: 'Marzo' },
-    { value: '4', label: 'Abril' },
-    { value: '5', label: 'Mayo' },
-    { value: '6', label: 'Junio' },
-    { value: '7', label: 'Julio' },
-    { value: '8', label: 'Agosto' },
-    { value: '9', label: 'Septiembre' },
-    { value: '10', label: 'Octubre' },
-    { value: '11', label: 'Noviembre' },
-    { value: '12', label: 'Diciembre' },
-  ];
+  const meses = Array.from({ length: 12 }, (_, i) => ({
+    value: String(i + 1),
+    label: getMonthName(i + 1),
+  }));
 
   const años = Array.from({ length: 5 }, (_, i) => ({
     value: String(now.getFullYear() - i),

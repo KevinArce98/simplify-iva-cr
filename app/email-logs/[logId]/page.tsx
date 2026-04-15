@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
-import { getServerSession } from 'next-auth';
 
-import { Sidebar } from '@/app/components/sidebar';
-import { authOptions } from '@/auth';
+import { getSession } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import AppShell from '@/app/components/app-shell';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('es-CR', {
   dateStyle: 'full',
@@ -21,7 +20,7 @@ type EmailLogDetailPageProps = {
 };
 
 export default async function EmailLogDetailPage({ params }: EmailLogDetailPageProps) {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
 
   if (!session) {
     redirect('/login');
@@ -84,12 +83,7 @@ export default async function EmailLogDetailPage({ params }: EmailLogDetailPageP
   ];
 
   return (
-    <>
-      <Sidebar />
-
-      <div className="relative flex min-h-screen w-full flex-row overflow-hidden md:pl-64 bg-[#f8f9fc]">
-        <div className="flex-1 flex flex-col h-full overflow-y-auto">
-          <div className="w-full max-w-300 mx-auto px-4 md:px-8 py-24 md:py-12 flex flex-col gap-6">
+    <AppShell>
             <div className="flex items-center gap-3 text-sm text-[#4d6599]">
               <Link
                 href="/"
@@ -302,9 +296,6 @@ export default async function EmailLogDetailPage({ params }: EmailLogDetailPageP
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </>
+    </AppShell>
   );
 }
