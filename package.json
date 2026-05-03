@@ -13,30 +13,30 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.7.0",
-    "@prisma/client": "^7.7.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "fast-xml-parser": "^5.5.12",
-    "next": "16.2.3",
+    "fast-xml-parser": "^5.7.2",
+    "next": "16.2.4",
     "next-auth": "4.24.14",
     "pg": "^8.20.0",
     "react": "19.2.5",
     "react-dom": "19.2.5"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/postcss": "^4.2.4",
     "@types/node": "^25.6.0",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^10.2.0",
-    "eslint-config-next": "16.2.3",
+    "eslint": "^10.3.0",
+    "eslint-config-next": "16.2.4",
     "eslint-config-prettier": "^10.1.8",
-    "prisma": "^7.7.0",
-    "tailwindcss": "^4.2.2",
+    "prisma": "^7.8.0",
+    "tailwindcss": "^4.2.4",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   }
 }
