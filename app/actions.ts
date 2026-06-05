@@ -1,7 +1,7 @@
 'use server';
 
 import { parseInvoiceXML } from '@/lib/xml-parser';
-import type { Currency, InvoiceType, UploadedFile } from '@/lib/types';
+import type { Currency, DocumentType, InvoiceType, UploadedFile } from '@/lib/types';
 import { prisma } from '@/lib/prisma';
 import type { Invoice } from '@prisma/client';
 import { getSession } from '@/auth';
@@ -99,7 +99,18 @@ function mapInvoiceForClient(invoice: Invoice) {
     0
   );
   const subtotalExento = encryptedNumber((invoice as any).subtotalExentoEncrypted, 0);
+  const subtotalExonerado = encryptedNumber(
+    (invoice as any).subtotalExoneradoEncrypted,
+    0
+  );
+  const subtotalNoSujeto = encryptedNumber(
+    (invoice as any).subtotalNoSujetoEncrypted,
+    0
+  );
   const tipoCambio = invoice.tipoCambio || 1;
+  const documentType = ((invoice as any).documentType ||
+    'FacturaElectronica') as DocumentType;
+  const signo = ((invoice as any).signo ?? 1) as 1 | -1;
 
   return {
     id: invoice.id,
@@ -109,6 +120,8 @@ function mapInvoiceForClient(invoice: Invoice) {
     cliente: invoice.tipo === 'EMITIDA' ? receptorNombre || undefined : undefined,
     numeroFactura: numeroConsecutivo || undefined,
     moneda: (invoice.tipoMoneda as Currency) || 'CRC',
+    documentType,
+    signo,
     ivaOriginal: totalImpuesto,
     totalOriginal: totalComprobante,
     tipoCambio,
@@ -116,8 +129,12 @@ function mapInvoiceForClient(invoice: Invoice) {
     totalCRC: totalComprobante * tipoCambio,
     subtotalGravado,
     subtotalExento,
+    subtotalExonerado,
+    subtotalNoSujeto,
     subtotalGravadoCRC: subtotalGravado * tipoCambio,
     subtotalExentoCRC: subtotalExento * tipoCambio,
+    subtotalExoneradoCRC: subtotalExonerado * tipoCambio,
+    subtotalNoSujetoCRC: subtotalNoSujeto * tipoCambio,
     tarifaIVA: invoice.tarifaIVA || 13,
   };
 }
@@ -207,6 +224,8 @@ export async function processXMLFile(
     const totalCRC = parsed.totalComprobante * tipoCambio;
     const subtotalGravadoCRC = parsed.subtotalGravado * tipoCambio;
     const subtotalExentoCRC = parsed.subtotalExento * tipoCambio;
+    const subtotalExoneradoCRC = parsed.subtotalExonerado * tipoCambio;
+    const subtotalNoSujetoCRC = parsed.subtotalNoSujeto * tipoCambio;
 
     // Save to database
     const invoice = await prisma.invoice.create({
@@ -229,6 +248,10 @@ export async function processXMLFile(
         totalComprobanteEncrypted: encryptNullableNumber(parsed.totalComprobante),
         subtotalGravadoEncrypted: encryptNullableNumber(parsed.subtotalGravado),
         subtotalExentoEncrypted: encryptNullableNumber(parsed.subtotalExento),
+        subtotalExoneradoEncrypted: encryptNullableNumber(parsed.subtotalExonerado),
+        subtotalNoSujetoEncrypted: encryptNullableNumber(parsed.subtotalNoSujeto),
+        documentType: parsed.documentType,
+        signo: parsed.signo,
         tarifaIVA: parsed.tarifaIVA,
         tipoMoneda: parsed.moneda,
         tipoCambio,
@@ -245,6 +268,8 @@ export async function processXMLFile(
       cliente: resolvedTipo === 'EMITIDA' ? parsed.receptor?.nombre || undefined : undefined,
       numeroFactura: parsed.numeroConsecutivo || undefined,
       moneda: (invoice.tipoMoneda as Currency) || 'CRC',
+      documentType: parsed.documentType,
+      signo: parsed.signo,
       ivaOriginal: parsed.totalImpuesto || 0,
       totalOriginal: parsed.totalComprobante || 0,
       tipoCambio: invoice.tipoCambio || 1,
@@ -252,8 +277,12 @@ export async function processXMLFile(
       totalCRC,
       subtotalGravado: parsed.subtotalGravado,
       subtotalExento: parsed.subtotalExento,
+      subtotalExonerado: parsed.subtotalExonerado,
+      subtotalNoSujeto: parsed.subtotalNoSujeto,
       subtotalGravadoCRC,
       subtotalExentoCRC,
+      subtotalExoneradoCRC,
+      subtotalNoSujetoCRC,
       tarifaIVA: parsed.tarifaIVA,
     };
 
@@ -331,8 +360,12 @@ export async function getTaxSummary(mes: number, año: number) {
     estaVencido,
     subtotalVentasGravadas: 0,
     subtotalVentasExentas: 0,
+    subtotalVentasExoneradas: 0,
+    subtotalVentasNoSujetas: 0,
     subtotalComprasGravadas: 0,
     subtotalComprasExentas: 0,
+    subtotalComprasExoneradas: 0,
+    subtotalComprasNoSujetas: 0,
     ivaPagar: 0,
     creditoFiscal: 0,
     saldoAFavorAnterior: 0,
@@ -363,22 +396,35 @@ export async function getTaxSummary(mes: number, año: number) {
       ivaVentas: number;
       subtotalVentasGravadas: number;
       subtotalVentasExentas: number;
+      subtotalVentasExoneradas: number;
+      subtotalVentasNoSujetas: number;
       subtotalComprasGravadas: number;
       subtotalComprasExentas: number;
+      subtotalComprasExoneradas: number;
+      subtotalComprasNoSujetas: number;
     }, inv) => {
       const tc = (inv as Invoice).tipoCambio || 1;
-      const iva = encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * tc;
-      const gravado = encryptedNumber((inv as any).subtotalGravadoEncrypted, 0) * tc;
-      const exento = encryptedNumber((inv as any).subtotalExentoEncrypted, 0) * tc;
+      // Notas de crédito carry signo = -1 so they subtract from the period.
+      const signo = ((inv as any).signo ?? 1) as number;
+      const factor = tc * signo;
+      const iva = encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * factor;
+      const gravado = encryptedNumber((inv as any).subtotalGravadoEncrypted, 0) * factor;
+      const exento = encryptedNumber((inv as any).subtotalExentoEncrypted, 0) * factor;
+      const exonerado = encryptedNumber((inv as any).subtotalExoneradoEncrypted, 0) * factor;
+      const noSujeto = encryptedNumber((inv as any).subtotalNoSujetoEncrypted, 0) * factor;
 
       if ((inv as Invoice).tipo === 'GASTO') {
         acc.ivaCompras += iva;
         acc.subtotalComprasGravadas += gravado;
         acc.subtotalComprasExentas += exento;
+        acc.subtotalComprasExoneradas += exonerado;
+        acc.subtotalComprasNoSujetas += noSujeto;
       } else {
         acc.ivaVentas += iva;
         acc.subtotalVentasGravadas += gravado;
         acc.subtotalVentasExentas += exento;
+        acc.subtotalVentasExoneradas += exonerado;
+        acc.subtotalVentasNoSujetas += noSujeto;
       }
       return acc;
     },
@@ -387,12 +433,27 @@ export async function getTaxSummary(mes: number, año: number) {
       ivaVentas: 0,
       subtotalVentasGravadas: 0,
       subtotalVentasExentas: 0,
+      subtotalVentasExoneradas: 0,
+      subtotalVentasNoSujetas: 0,
       subtotalComprasGravadas: 0,
       subtotalComprasExentas: 0,
+      subtotalComprasExoneradas: 0,
+      subtotalComprasNoSujetas: 0,
     }
   );
 
-  const { ivaCompras, ivaVentas, subtotalVentasGravadas, subtotalVentasExentas, subtotalComprasGravadas, subtotalComprasExentas } = totals;
+  const {
+    ivaCompras,
+    ivaVentas,
+    subtotalVentasGravadas,
+    subtotalVentasExentas,
+    subtotalVentasExoneradas,
+    subtotalVentasNoSujetas,
+    subtotalComprasGravadas,
+    subtotalComprasExentas,
+    subtotalComprasExoneradas,
+    subtotalComprasNoSujetas,
+  } = totals;
 
   const ivaPagar = Math.max(0, ivaVentas - ivaCompras);
   const creditoFiscal = Math.max(0, ivaCompras - ivaVentas);
@@ -438,8 +499,12 @@ export async function getTaxSummary(mes: number, año: number) {
     estaVencido,
     subtotalVentasGravadas,
     subtotalVentasExentas,
+    subtotalVentasExoneradas,
+    subtotalVentasNoSujetas,
     subtotalComprasGravadas,
     subtotalComprasExentas,
+    subtotalComprasExoneradas,
+    subtotalComprasNoSujetas,
     ivaPagar,
     creditoFiscal,
     saldoAFavorAnterior,

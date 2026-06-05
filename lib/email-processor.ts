@@ -245,10 +245,15 @@ async function processXMLAttachment(
     // Check document type
     const docType = getDocumentType(xmlContent);
 
-    // Only process electronic invoice documents
-    if (docType !== 'FacturaElectronica') {
+    // Process facturas and notas de crédito/débito (notas adjust a prior invoice)
+    const supportedTypes = [
+      'FacturaElectronica',
+      'NotaCreditoElectronica',
+      'NotaDebitoElectronica',
+    ];
+    if (!docType || !supportedTypes.includes(docType)) {
       const reason = docType === 'TiqueteElectronico'
-        ? 'Se recibió un TiqueteElectronico. Solo se procesa FacturaElectronica.'
+        ? 'Se recibió un TiqueteElectronico. Solo se procesan FacturaElectronica y notas de crédito/débito.'
         : docType
           ? `${docType} documents are not supported`
           : 'Unknown XML document type';
@@ -278,15 +283,11 @@ async function processXMLAttachment(
     const invoiceDate = new Date(parsedInvoice.fecha);
     const exchangeRate = parsedInvoice.tipoCambio;
     const tipo = classifyInvoiceType(parsedInvoice, userTaxId);
-    
-    // Extract total tax from desglose if available
-    let totalImpuesto = parsedInvoice.totalImpuesto;
-    
-    if (parsedInvoice.desgloseTarifas && parsedInvoice.desgloseTarifas.length > 0) {
-      totalImpuesto = parsedInvoice.desgloseTarifas
-        .reduce((sum, d) => sum + d.impuesto, 0);
-    }
-    
+
+    // TotalImpuesto from ResumenFactura is Hacienda's authoritative net tax
+    // (already discounting any exoneration), so we use it directly.
+    const totalImpuesto = parsedInvoice.totalImpuesto;
+
     // Create invoice in database
     const invoice = await prisma.invoice.create({
       data: {
@@ -307,11 +308,17 @@ async function processXMLAttachment(
           parsedInvoice.receptor?.identificacion
         ),
         
+        // Document classification
+        documentType: parsedInvoice.documentType,
+        signo: parsedInvoice.signo,
+
         // Base amounts for Hacienda declaration
         subtotalGravadoEncrypted: encryptNullableNumber(parsedInvoice.subtotalGravado),
         subtotalExentoEncrypted: encryptNullableNumber(parsedInvoice.subtotalExento),
+        subtotalExoneradoEncrypted: encryptNullableNumber(parsedInvoice.subtotalExonerado),
+        subtotalNoSujetoEncrypted: encryptNullableNumber(parsedInvoice.subtotalNoSujeto),
         tarifaIVA: parsedInvoice.tarifaIVA,
-        
+
         // Totals used by reports
         totalImpuestoEncrypted: encryptNullableNumber(totalImpuesto),
         totalComprobanteEncrypted: encryptNullableNumber(

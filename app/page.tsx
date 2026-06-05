@@ -408,10 +408,10 @@ export default async function HomePage({
                         </div>
                         <div className="text-right ml-3 shrink-0">
                           <p className="text-sm font-bold text-[#0e121b]">
-                            {formatCRC(invoice.totalCRC)}
+                            {formatCRC(invoice.signo * invoice.totalCRC)}
                           </p>
                           <p className="text-xs text-[#4d6599]">
-                            IVA: {formatCRC(invoice.ivaCRC)}
+                            IVA: {formatCRC(invoice.signo * invoice.ivaCRC)}
                           </p>
                         </div>
                       </div>

@@ -169,13 +169,17 @@ export default async function ReportsPage({
                     remove_shopping_cart
                   </span>
                   <p className="text-xs font-semibold uppercase tracking-wider">
-                    Ventas Exentas
+                    Ventas Exentas/Exon.
                   </p>
                 </div>
                 <p className="text-2xl font-bold tracking-tight text-gray-900">
-                  {formatCRC(summary.subtotalVentasExentas)}
+                  {formatCRC(
+                    summary.subtotalVentasExentas +
+                      summary.subtotalVentasExoneradas +
+                      summary.subtotalVentasNoSujetas
+                  )}
                 </p>
-                <p className="text-xs text-[#4d6599]">Sin IVA (tarifa 0%)</p>
+                <p className="text-xs text-[#4d6599]">Exentas, exoneradas y no sujetas</p>
               </div>
 
               {/* Compras Gravadas (Base) */}
@@ -201,13 +205,17 @@ export default async function ReportsPage({
                     production_quantity_limits
                   </span>
                   <p className="text-xs font-semibold uppercase tracking-wider">
-                    Compras Exentas
+                    Compras Exentas/Exon.
                   </p>
                 </div>
                 <p className="text-2xl font-bold tracking-tight text-gray-900">
-                  {formatCRC(summary.subtotalComprasExentas)}
+                  {formatCRC(
+                    summary.subtotalComprasExentas +
+                      summary.subtotalComprasExoneradas +
+                      summary.subtotalComprasNoSujetas
+                  )}
                 </p>
-                <p className="text-xs text-[#4d6599]">Sin IVA (tarifa 0%)</p>
+                <p className="text-xs text-[#4d6599]">Exentas, exoneradas y no sujetas</p>
               </div>
             </div>
 
@@ -310,6 +318,10 @@ export default async function ReportsPage({
                 subtotalComprasGravadas: summary.subtotalComprasGravadas,
                 subtotalVentasExentas: summary.subtotalVentasExentas,
                 subtotalComprasExentas: summary.subtotalComprasExentas,
+                subtotalVentasExoneradas: summary.subtotalVentasExoneradas,
+                subtotalComprasExoneradas: summary.subtotalComprasExoneradas,
+                subtotalVentasNoSujetas: summary.subtotalVentasNoSujetas,
+                subtotalComprasNoSujetas: summary.subtotalComprasNoSujetas,
                 ivaDebito: summary.ivaDebito,
                 ivaCredito: summary.ivaCredito,
               }}

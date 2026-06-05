@@ -2,6 +2,11 @@ export type Currency = 'CRC' | 'USD';
 
 export type InvoiceType = 'GASTO' | 'EMITIDA';
 
+export type DocumentType =
+  | 'FacturaElectronica'
+  | 'NotaCreditoElectronica'
+  | 'NotaDebitoElectronica';
+
 export type InvoiceStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'ERROR';
 
 // Desglose de impuestos por tarifa
@@ -43,9 +48,15 @@ export type Invoice = {
   // New fields for Hacienda
   subtotalGravado: number;     // Base imponible (monto antes de IVA)
   subtotalExento: number;      // Monto exento (sin IVA)
+  subtotalExonerado: number;   // Monto exonerado (con exoneración de Hacienda)
+  subtotalNoSujeto: number;    // Monto no sujeto al impuesto
   subtotalGravadoCRC: number;  // Base imponible en CRC
   subtotalExentoCRC: number;   // Monto exento en CRC
+  subtotalExoneradoCRC: number;// Monto exonerado en CRC
+  subtotalNoSujetoCRC: number; // Monto no sujeto en CRC
   tarifaIVA: number;           // Tarifa de IVA (ej: 13)
+  documentType: DocumentType;  // Tipo de comprobante
+  signo: 1 | -1;               // -1 para notas de crédito (restan al período)
 };
 
 export type UploadedFile = {
@@ -72,8 +83,12 @@ export type TaxSummary = {
   // New fields for Hacienda
   subtotalVentasGravadas: number;   // Base imponible de ventas (EMITIDAS)
   subtotalVentasExentas: number;    // Ventas exentas
+  subtotalVentasExoneradas: number; // Ventas exoneradas
+  subtotalVentasNoSujetas: number;  // Ventas no sujetas
   subtotalComprasGravadas: number;  // Base imponible de compras (GASTOS)
   subtotalComprasExentas: number;   // Compras exentas
+  subtotalComprasExoneradas: number;// Compras exoneradas
+  subtotalComprasNoSujetas: number; // Compras no sujetas
   ivaPagar: number;                 // IVA a pagar (ivaDebito - ivaCredito)
   creditoFiscal: number;            // Crédito fiscal si ivaCredito > ivaDebito
   // Saldo a favor
@@ -85,6 +100,8 @@ export type TaxSummary = {
 export type ParsedXMLInvoice = {
   fecha: string;
   moneda: Currency;
+  documentType: DocumentType;
+  signo: 1 | -1;
   totalImpuesto: number;
   totalComprobante: number;
   emisor?: {
@@ -100,6 +117,8 @@ export type ParsedXMLInvoice = {
   // New fields for Hacienda
   subtotalGravado: number;        // Base imponible (suma de bases con IVA > 0%)
   subtotalExento: number;         // Total exento (IVA 0%)
+  subtotalExonerado: number;      // Total exonerado (exoneración de Hacienda)
+  subtotalNoSujeto: number;       // Total no sujeto al impuesto
   tarifaIVA: number;              // Tarifa predominante
   desgloseTarifas: DesgloseTarifa[]; // Desglose por tarifa
   tipoCambio: number;             // Tipo de cambio del XML (1.0 para CRC)
