@@ -12,6 +12,10 @@ interface InvoicesTableProps {
     subtotalComprasGravadas: number;
     subtotalVentasExentas: number;
     subtotalComprasExentas: number;
+    subtotalVentasExoneradas: number;
+    subtotalComprasExoneradas: number;
+    subtotalVentasNoSujetas: number;
+    subtotalComprasNoSujetas: number;
     ivaDebito: number;
     ivaCredito: number;
   };
@@ -189,7 +193,7 @@ export function InvoicesTable({
                     Base Gravada
                   </th>
                   <th className="px-4 py-4 text-xs font-semibold text-[#4d6599] uppercase tracking-wider text-right w-32 bg-amber-50/50">
-                    Exento
+                    Exento/Exon.
                   </th>
                   <th className="px-4 py-4 text-xs font-semibold text-[#4d6599] uppercase tracking-wider text-center w-16">
                     Tarifa
@@ -228,20 +232,36 @@ export function InvoicesTable({
                       >
                         {invoice.tipo === 'GASTO' ? 'Compra' : 'Venta'}
                       </span>
+                      {invoice.documentType === 'NotaCreditoElectronica' && (
+                        <span className="mt-1 block text-[10px] font-semibold text-red-600">
+                          Nota Crédito
+                        </span>
+                      )}
+                      {invoice.documentType === 'NotaDebitoElectronica' && (
+                        <span className="mt-1 block text-[10px] font-semibold text-amber-600">
+                          Nota Débito
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-mono text-gray-900 bg-blue-50/30">
-                      {formatCRC(invoice.subtotalGravadoCRC)}
+                      {formatCRC(invoice.signo * invoice.subtotalGravadoCRC)}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-mono text-gray-600 bg-amber-50/30">
-                      {invoice.subtotalExentoCRC > 0
-                        ? formatCRC(invoice.subtotalExentoCRC)
-                        : '-'}
+                      {(() => {
+                        const noGravado =
+                          invoice.subtotalExentoCRC +
+                          invoice.subtotalExoneradoCRC +
+                          invoice.subtotalNoSujetoCRC;
+                        return noGravado !== 0
+                          ? formatCRC(invoice.signo * noGravado)
+                          : '-';
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-sm text-center font-medium text-gray-600">
                       {invoice.ivaCRC > 0 ? `${invoice.tarifaIVA}%` : '0%'}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-bold text-gray-900 bg-gray-50/50">
-                      {formatCRC(invoice.ivaCRC)}
+                      {formatCRC(invoice.signo * invoice.ivaCRC)}
                     </td>
                   </tr>
                 ))}
@@ -262,7 +282,12 @@ export function InvoicesTable({
                   </td>
                   <td className="px-4 py-3 text-sm text-right font-mono text-gray-700 bg-amber-100/50">
                     {formatCRC(
-                      summary.subtotalVentasExentas + summary.subtotalComprasExentas
+                      summary.subtotalVentasExentas +
+                        summary.subtotalComprasExentas +
+                        summary.subtotalVentasExoneradas +
+                        summary.subtotalComprasExoneradas +
+                        summary.subtotalVentasNoSujetas +
+                        summary.subtotalComprasNoSujetas
                     )}
                   </td>
                   <td className="px-4 py-3"></td>
