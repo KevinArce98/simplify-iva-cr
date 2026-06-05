@@ -56,11 +56,18 @@ model Invoice {
   receptorNombreEncrypted Json?
   receptorIdentificacionEncrypted Json?
   
+  // Document type: FacturaElectronica | NotaCreditoElectronica | NotaDebitoElectronica
+  documentType      String   @default("FacturaElectronica")
+  // Sign applied to the IVA period: 1 for facturas/notas de débito, -1 for notas de crédito
+  signo             Int      @default(1)
+
   // Amounts - Base amounts (subtotals) for Hacienda declaration
   subtotalGravadoEncrypted Json?
   subtotalExentoEncrypted Json?
+  subtotalExoneradoEncrypted Json?
+  subtotalNoSujetoEncrypted Json?
   tarifaIVA         Float?   @default(13) // Tarifa de IVA predominante de la factura
-  
+
   // Totals used by reports
   totalImpuestoEncrypted Json?
   totalComprobanteEncrypted Json?

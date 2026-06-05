@@ -1,5 +1,14 @@
 import { XMLParser } from 'fast-xml-parser';
-import type { Currency, ParsedXMLInvoice, LineaDetalle, DesgloseTarifa } from './types';
+import type { Currency, DocumentType, ParsedXMLInvoice, LineaDetalle, DesgloseTarifa } from './types';
+
+/** Parses an XML numeric field, returning 0 for missing/invalid values. */
+function parseNumber(value: unknown): number {
+  if (value === undefined || value === null || value === '') {
+    return 0;
+  }
+  const n = parseFloat(String(value));
+  return Number.isFinite(n) ? n : 0;
+}
 
 function extractIdentification(personNode: any): string | undefined {
   const numero = personNode?.Identificacion?.Numero;
@@ -11,9 +20,26 @@ function extractIdentification(personNode: any): string | undefined {
   return normalized.length > 0 ? normalized : undefined;
 }
 
+// Document types accepted for IVA processing. Notas de crédito/débito share the
+// same structure as FacturaElectronica and adjust a previous invoice.
+const SUPPORTED_DOCUMENT_TYPES = [
+  'FacturaElectronica',
+  'NotaCreditoElectronica',
+  'NotaDebitoElectronica',
+] as const;
+
+/**
+ * Returns the sign a document applies to the IVA period:
+ *  +1 for facturas and notas de débito (increase tax)
+ *  -1 for notas de crédito (reverse/decrease a previous invoice)
+ */
+function getDocumentSigno(documentType: string): 1 | -1 {
+  return documentType === 'NotaCreditoElectronica' ? -1 : 1;
+}
+
 /**
  * Parses Costa Rica electronic invoice XML (v4.4)
- * Supports: FacturaElectronica
+ * Supports: FacturaElectronica, NotaCreditoElectronica, NotaDebitoElectronica
  * Ignores: MensajeReceptor
  */
 export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvoice> {
@@ -37,14 +63,18 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
 
     if (documentNode.type === 'TiqueteElectronico') {
       throw new Error(
-        'Este archivo es un TiqueteElectronico. Solo se permiten FacturaElectronica para procesar IVA.'
+        'Este archivo es un TiqueteElectronico. Solo se permiten FacturaElectronica y notas de crédito/débito para procesar IVA.'
       );
     }
 
-    if (documentNode.type !== 'FacturaElectronica') {
-      throw new Error('Documento no es una FacturaElectronica válida');
+    if (!SUPPORTED_DOCUMENT_TYPES.includes(documentNode.type as any)) {
+      throw new Error(
+        `Documento no soportado: ${documentNode.type}. Solo se permiten FacturaElectronica y notas de crédito/débito.`
+      );
     }
 
+    const documentType = documentNode.type as DocumentType;
+    const signo = getDocumentSigno(documentType);
     const factura = documentNode.node;
 
     // Extract date (FechaEmision)
@@ -104,16 +134,29 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
     // Extract clave - always convert to string to avoid type issues
     const clave = factura.Clave ? String(factura.Clave) : undefined;
 
-    // Parse line items to calculate subtotals by IVA rate
-    const { subtotalGravado, subtotalExento, tarifaIVA, desgloseTarifas } = parseLineItems(factura);
+    // Parse line items: only used for the predominant IVA rate (informational)
+    // and as a fallback when the ResumenFactura totals are missing.
+    const { subtotalGravado: lineGravado, subtotalExento: lineExento, tarifaIVA, desgloseTarifas } = parseLineItems(factura);
 
-    // Get totals from ResumenFactura as fallback
-    const totalGravado = parseFloat(factura.ResumenFactura?.TotalGravado || '0');
-    const totalExento = parseFloat(factura.ResumenFactura?.TotalExento || '0');
+    // ResumenFactura is Hacienda's authoritative breakdown: totals are already
+    // net of exoneration and split by category. Use it as the source of truth
+    // and fall back to line-item computation only when a total is absent.
+    const resumen = factura.ResumenFactura || {};
+    const totalGravado = parseNumber(resumen.TotalGravado);
+    const totalExento = parseNumber(resumen.TotalExento);
+    const totalExonerado = parseNumber(resumen.TotalExonerado);
+    // v4.4 has no combined "no sujeto" total; sum services + goods.
+    const totalNoSujeto =
+      parseNumber(resumen.TotalServNoSujeto) + parseNumber(resumen.TotalMercNoSujeta);
+
+    const subtotalGravado = resumen.TotalGravado !== undefined ? totalGravado : lineGravado;
+    const subtotalExento = resumen.TotalExento !== undefined ? totalExento : lineExento;
 
     return {
       fecha,
       moneda,
+      documentType,
+      signo,
       totalImpuesto,
       totalComprobante,
       emisor: {
@@ -127,8 +170,10 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
       numeroConsecutivo,
       clave,
       // New fields for Hacienda
-      subtotalGravado: subtotalGravado || totalGravado,
-      subtotalExento: subtotalExento || totalExento,
+      subtotalGravado,
+      subtotalExento,
+      subtotalExonerado: totalExonerado,
+      subtotalNoSujeto: totalNoSujeto,
       tarifaIVA,
       desgloseTarifas,
       tipoCambio,
@@ -202,8 +247,14 @@ function parseLineItems(factura: any): {
     }
     
     const tarifa = parseFloat(ivaImpuesto.Tarifa || '0');
-    const montoImpuesto = parseFloat(ivaImpuesto.Monto || '0');
-    
+    const montoImpuestoBruto = parseFloat(ivaImpuesto.Monto || '0');
+    // Subtract any exoneration (Exoneracion) to get the net tax actually owed.
+    // A fully exonerated line has MontoExoneracion === Monto, so net tax is 0.
+    const montoExoneracion = parseFloat(
+      ivaImpuesto.Exoneracion?.MontoExoneracion || '0'
+    );
+    const montoImpuesto = Math.max(montoImpuestoBruto - montoExoneracion, 0);
+
     if (tarifa === 0 || montoImpuesto === 0) {
       // IVA rate is 0% - exempt
       subtotalExento += baseImponible;
