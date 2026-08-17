@@ -139,9 +139,6 @@ function mapInvoiceForClient(invoice: Invoice) {
   };
 }
 
-/**
- * Processes an uploaded XML file and stores the invoice in the database
- */
 export async function processXMLFile(
   fileName: string,
   fileContent: string,
@@ -173,10 +170,8 @@ export async function processXMLFile(
   };
 
   try {
-    // Parse XML
     const parsed = await parseInvoiceXML(fileContent);
 
-    // Check if invoice already exists for this user
     if (parsed.clave) {
       const existingInvoice = await prisma.invoice.findFirst({
         where: {
@@ -216,10 +211,8 @@ export async function processXMLFile(
 
     const resolvedTipo = inferredTipo;
 
-    // Use exchange rate from XML (already included in the parsed data)
     const tipoCambio = parsed.tipoCambio;
 
-    // Calculate IVA in CRC
     const ivaCRC = parsed.totalImpuesto * tipoCambio;
     const totalCRC = parsed.totalComprobante * tipoCambio;
     const subtotalGravadoCRC = parsed.subtotalGravado * tipoCambio;
@@ -227,7 +220,6 @@ export async function processXMLFile(
     const subtotalExoneradoCRC = parsed.subtotalExonerado * tipoCambio;
     const subtotalNoSujetoCRC = parsed.subtotalNoSujeto * tipoCambio;
 
-    // Save to database
     const invoice = await prisma.invoice.create({
       data: {
         userId: currentUser.id,
@@ -301,9 +293,6 @@ export async function processXMLFile(
   }
 }
 
-/**
- * Gets all invoices for a specific period
- */
 export async function getInvoicesByPeriod(mes: number, año: number) {
   const session = await getSession();
 
@@ -331,15 +320,10 @@ export async function getInvoicesByPeriod(mes: number, año: number) {
   return invoices.map((invoice: Invoice) => mapInvoiceForClient(invoice));
 }
 
-/**
- * Gets tax summary for a specific period
- * Includes subtotals for Hacienda declaration
- */
 export async function getTaxSummary(mes: number, año: number) {
   const session = await getSession();
   const period = normalizePeriod(mes, año);
 
-  // Calculate dates and due date info
   const dueDate = getIVADueDate(period.mes, period.año);
   const today = new Date();
   const diffTime = dueDate.getTime() - today.getTime();
@@ -404,7 +388,6 @@ export async function getTaxSummary(mes: number, año: number) {
       subtotalComprasNoSujetas: number;
     }, inv) => {
       const tc = (inv as Invoice).tipoCambio || 1;
-      // Notas de crédito carry signo = -1 so they subtract from the period.
       const signo = ((inv as any).signo ?? 1) as number;
       const factor = tc * signo;
       const iva = encryptedNumber((inv as any).totalImpuestoEncrypted, 0) * factor;
@@ -458,7 +441,6 @@ export async function getTaxSummary(mes: number, año: number) {
   const ivaPagar = Math.max(0, ivaVentas - ivaCompras);
   const creditoFiscal = Math.max(0, ivaCompras - ivaVentas);
 
-  // Obtener saldo a favor del usuario
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { saldoAFavor: true },
@@ -466,23 +448,18 @@ export async function getTaxSummary(mes: number, año: number) {
 
   const saldoAFavorAnterior = user?.saldoAFavor || 0;
 
-  // Calcular IVA a pagar después de aplicar saldo a favor
   let ivaPagarConSaldo = ivaPagar;
   let nuevoSaldoAFavor = saldoAFavorAnterior;
 
   if (ivaPagar > 0) {
-    // Si hay IVA a pagar, aplicamos el saldo a favor
     if (saldoAFavorAnterior >= ivaPagar) {
-      // El saldo cubre todo el IVA
       nuevoSaldoAFavor = saldoAFavorAnterior - ivaPagar;
       ivaPagarConSaldo = 0;
     } else {
-      // El saldo cubre parcialmente
       ivaPagarConSaldo = ivaPagar - saldoAFavorAnterior;
       nuevoSaldoAFavor = 0;
     }
   } else if (creditoFiscal > 0) {
-    // Si hay crédito fiscal, se suma al saldo a favor
     nuevoSaldoAFavor = saldoAFavorAnterior + creditoFiscal;
   }
 
@@ -513,9 +490,6 @@ export async function getTaxSummary(mes: number, año: number) {
   };
 }
 
-/**
- * Returns true if the user has any invoices (avoids fetching all rows)
- */
 export async function hasInvoices(): Promise<boolean> {
   const session = await getSession();
 
@@ -530,9 +504,6 @@ export async function hasInvoices(): Promise<boolean> {
   return count > 0;
 }
 
-/**
- * Gets all invoices
- */
 export async function getAllInvoices() {
   const session = await getSession();
 
@@ -552,9 +523,6 @@ export async function getAllInvoices() {
   return invoices.map((invoice: Invoice) => mapInvoiceForClient(invoice));
 }
 
-/**
- * Gets recent invoices (last 5)
- */
 export async function getRecentInvoices() {
   const session = await getSession();
 
@@ -575,9 +543,6 @@ export async function getRecentInvoices() {
   return invoices.map((invoice: Invoice) => mapInvoiceForClient(invoice));
 }
 
-/**
- * Gets available periods (months) with invoices
- */
 export async function getAvailablePeriods() {
   const session = await getSession();
 
@@ -618,9 +583,6 @@ export async function getAvailablePeriods() {
   });
 }
 
-/**
- * Clears all invoices (dev/testing only)
- */
 export async function clearAllInvoices() {
   if (process.env.NODE_ENV === 'production') {
     return;
@@ -639,9 +601,6 @@ export async function clearAllInvoices() {
   });
 }
 
-/**
- * Updates the user's saldo a favor after declaring taxes
- */
 export async function actualizarSaldoAFavor(mes: number, año: number) {
   const session = await getSession();
 
@@ -649,10 +608,8 @@ export async function actualizarSaldoAFavor(mes: number, año: number) {
     throw new Error('Usuario no autenticado');
   }
 
-  // Get current tax summary
   const summary = await getTaxSummary(mes, año);
 
-  // Update user's saldo a favor
   await prisma.user.update({
     where: { id: session.user.id },
     data: { saldoAFavor: summary.nuevoSaldoAFavor },

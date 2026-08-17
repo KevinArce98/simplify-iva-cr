@@ -34,8 +34,6 @@ export function InvoicesTable({
   currentAño,
 }: InvoicesTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Filtrar facturas basado en el término de búsqueda
   const filteredInvoices = useMemo(() => {
     if (!searchTerm.trim()) return invoices;
 

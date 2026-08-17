@@ -41,9 +41,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Logo/Header */}
-          <div className="text-center mb-8">
+        <div className="bg-white rounded-2xl shadow-xl p-8">          <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-(--primary) rounded-2xl mb-4">
               <span className="material-symbols-outlined text-white" style={{ fontSize: 40 }}>
                 calculate
@@ -52,8 +50,6 @@ export default function LoginPage() {
             <h2 className="text-[#0e121b] text-2xl font-bold">Simplify IVA CR</h2>
             <p className="text-[#4d6599] text-sm mt-2">Inicia sesión para continuar</p>
           </div>
-
-          {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <span className="material-symbols-outlined text-red-600 text-xl">
@@ -62,8 +58,6 @@ export default function LoginPage() {
               <p className="text-sm text-red-800 flex-1">{error}</p>
             </div>
           )}
-
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label
@@ -123,8 +117,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Register Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-[#4d6599]">
               ¿No tienes una cuenta?{' '}
@@ -137,8 +129,6 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-
-        {/* Footer */}
         <p className="text-center text-sm text-[#4d6599] mt-6">
           Sistema de cálculo de IVA para Costa Rica
         </p>

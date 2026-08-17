@@ -27,8 +27,6 @@ export default function UploadPage() {
       alert('Por favor seleccione solo archivos XML');
       return;
     }
-
-    // Add files to queue with PENDING status
     const newFiles: UploadedFile[] = xmlFiles.map((file) => ({
       id: crypto.randomUUID(),
       name: file.name,
@@ -39,13 +37,9 @@ export default function UploadPage() {
 
     setFiles((prev) => [...prev, ...newFiles]);
     setIsProcessing(true);
-
-    // Process each file
     for (let i = 0; i < xmlFiles.length; i++) {
       const file = xmlFiles[i];
       const fileId = newFiles[i].id;
-
-      // Update to PROCESSING
       setFiles((prev) =>
         prev.map((f) => (f.id === fileId ? { ...f, status: 'PROCESSING' } : f))
       );
@@ -53,8 +47,6 @@ export default function UploadPage() {
       try {
         const text = await file.text();
         const result: ProcessFileResult = await processXMLFile(file.name, text, tipo);
-
-        // Update with result
         setFiles((prev) => prev.map((f) => (f.id === fileId ? result.file : f)));
       } catch (error) {
         setFiles((prev) =>
@@ -108,13 +100,9 @@ export default function UploadPage() {
 
   const successCount = files.filter((f) => f.status === 'SUCCESS').length;
   const errorCount = files.filter((f) => f.status === 'ERROR').length;
-
-  // Detectar el mes/año de las facturas cargadas exitosamente
   const invoicePeriod = useMemo(() => {
     const successFiles = files.filter((f) => f.status === 'SUCCESS' && f.invoice);
     if (successFiles.length === 0) return null;
-
-    // Tomar la fecha de la primera factura exitosa
     const firstInvoice = successFiles[0].invoice;
     if (!firstInvoice) return null;
 
@@ -134,9 +122,7 @@ export default function UploadPage() {
   };
 
   return (
-    <AppShell>
-          {/* Full Screen Loader */}
-          {isProcessing && (
+    <AppShell>          {isProcessing && (
             <div
               role="status"
               aria-busy="true"
@@ -156,9 +142,7 @@ export default function UploadPage() {
                 </div>
               </div>
             </div>
-          )}
-          {/* Page Heading */}
-          <div className="flex flex-col gap-3">
+          )}          <div className="flex flex-col gap-3">
             <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">
               Carga de Facturas
             </h2>
@@ -166,11 +150,7 @@ export default function UploadPage() {
               Arrastra y suelta tus archivos XML de facturación electrónica para procesar tus declaraciones de IVA
             </p>
           </div>
-
-          {/* Drop Zones */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Zone: Gastos */}
-            <div
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">            <div
               className={`group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed bg-white p-8 md:p-12 hover:border-(--primary) hover:bg-(--primary)/5 transition-all cursor-pointer ${
                 isDraggingGasto
                   ? 'border-(--primary) bg-(--primary)/5'
@@ -203,8 +183,6 @@ export default function UploadPage() {
                 onChange={(e) => handleFileSelect(e.target.files, 'GASTO')}
               />
             </div>
-
-            {/* Zone: Emitidas */}
             <div
               className={`group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed bg-white p-8 md:p-12 hover:border-(--primary) hover:bg-(--primary)/5 transition-all cursor-pointer ${
                 isDraggingEmitida
@@ -237,8 +215,6 @@ export default function UploadPage() {
               />
             </div>
           </div>
-
-          {/* Queue Table */}
           {files.length > 0 && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between px-2">

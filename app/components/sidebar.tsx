@@ -37,9 +37,7 @@ export function Sidebar() {
   ];
 
   return (
-    <>
-      {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 flex items-center justify-between p-4 bg-white border-b border-[#d0d7e7] z-50">
+    <>      <div className="md:hidden fixed top-0 left-0 right-0 flex items-center justify-between p-4 bg-white border-b border-[#d0d7e7] z-50">
         <div className="flex flex-col">
           <h1 className="text-[#0e121b] text-base font-bold">Simplify IVA CR</h1>
           <p className="text-[#4d6599] text-xs font-normal">Costa Rica</p>
@@ -54,16 +52,12 @@ export function Sidebar() {
           </span>
         </button>
       </div>
-
-      {/* Mobile Menu Overlay */}
       {isOpen && (
         <div 
           className="md:hidden fixed inset-0 bg-black/50 z-40 top-18.25"
           onClick={() => setIsOpen(false)}
         />
       )}
-
-      {/* Mobile Sidebar */}
       <div
         className={`md:hidden fixed top-18.25 right-0 h-[calc(100vh-73px)] w-64 bg-white border-l border-[#d0d7e7] z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
@@ -105,8 +99,6 @@ export function Sidebar() {
           </div>
         </div>
       </div>
-
-      {/* Desktop Sidebar */}
       <div className="hidden md:flex fixed left-0 top-0 h-full w-64 flex-col justify-between border-r border-[#d0d7e7] bg-white p-4 z-30">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col px-2">
