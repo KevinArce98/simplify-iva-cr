@@ -134,23 +134,28 @@ export async function parseInvoiceXML(xmlContent: string): Promise<ParsedXMLInvo
     // Extract clave - always convert to string to avoid type issues
     const clave = factura.Clave ? String(factura.Clave) : undefined;
 
-    // Parse line items: only used for the predominant IVA rate (informational)
-    // and as a fallback when the ResumenFactura totals are missing.
-    const { subtotalGravado: lineGravado, subtotalExento: lineExento, tarifaIVA, desgloseTarifas } = parseLineItems(factura);
+    // Line items carry the taxable base already net of line-level discounts (via
+    // BaseImponible) and split by category, so they drive the gravado/exento bases.
+    const {
+      subtotalGravado: lineGravado,
+      subtotalExento: lineExento,
+      tarifaIVA,
+      desgloseTarifas,
+    } = parseLineItems(factura);
 
-    // ResumenFactura is Hacienda's authoritative breakdown: totals are already
-    // net of exoneration and split by category. Use it as the source of truth
-    // and fall back to line-item computation only when a total is absent.
     const resumen = factura.ResumenFactura || {};
-    const totalGravado = parseNumber(resumen.TotalGravado);
-    const totalExento = parseNumber(resumen.TotalExento);
+    // ResumenFactura.TotalGravado / TotalExento are GROSS (before discounts): they
+    // overstate the base whenever a line carries a Descuento, leaving base × tarifa
+    // ≠ IVA. Prefer the line-level base, which is net of discount. parseLineItems
+    // already falls back to the ResumenFactura totals when there is no DetalleServicio.
+    const subtotalGravado = lineGravado;
+    const subtotalExento = lineExento;
+    // Exonerado / no-sujeto are not reliably separable at the line level, so the
+    // ResumenFactura totals remain the source of truth for those categories.
     const totalExonerado = parseNumber(resumen.TotalExonerado);
     // v4.4 has no combined "no sujeto" total; sum services + goods.
     const totalNoSujeto =
       parseNumber(resumen.TotalServNoSujeto) + parseNumber(resumen.TotalMercNoSujeta);
-
-    const subtotalGravado = resumen.TotalGravado !== undefined ? totalGravado : lineGravado;
-    const subtotalExento = resumen.TotalExento !== undefined ? totalExento : lineExento;
 
     return {
       fecha,
@@ -222,8 +227,10 @@ function parseLineItems(factura: any): {
   }
   
   for (const linea of lineas) {
+    // BaseImponible is already net of line-level discounts, unlike the gross
+    // ResumenFactura category totals. Use it as the taxable base.
     const baseImponible = parseFloat(linea.BaseImponible || linea.SubTotal || '0');
-    
+
     // Get tax info - can be a single object or array
     let impuestos = linea.Impuesto;
     if (!impuestos) {
@@ -231,48 +238,51 @@ function parseLineItems(factura: any): {
       subtotalExento += baseImponible;
       continue;
     }
-    
+
     // Normalize to array
     if (!Array.isArray(impuestos)) {
       impuestos = [impuestos];
     }
-    
+
     // Only process IVA (Codigo = 01)
     const ivaImpuesto = impuestos.find((imp: any) => imp.Codigo === '01' || imp.Codigo === 1);
-    
+
     if (!ivaImpuesto) {
       // No IVA on this line - considered exempt
       subtotalExento += baseImponible;
       continue;
     }
-    
-    const tarifa = parseFloat(ivaImpuesto.Tarifa || '0');
-    const montoImpuestoBruto = parseFloat(ivaImpuesto.Monto || '0');
-    // Subtract any exoneration (Exoneracion) to get the net tax actually owed.
-    // A fully exonerated line has MontoExoneracion === Monto, so net tax is 0.
+
+    // Lines with an exoneration are reported under "exonerado", whose total comes
+    // from ResumenFactura. Skip them here so their base is not double-counted as
+    // gravado or exento.
     const montoExoneracion = parseFloat(
       ivaImpuesto.Exoneracion?.MontoExoneracion || '0'
     );
-    const montoImpuesto = Math.max(montoImpuestoBruto - montoExoneracion, 0);
+    if (montoExoneracion > 0) {
+      continue;
+    }
+
+    const tarifa = parseFloat(ivaImpuesto.Tarifa || '0');
+    const montoImpuesto = parseFloat(ivaImpuesto.Monto || '0');
 
     if (tarifa === 0 || montoImpuesto === 0) {
       // IVA rate is 0% - exempt
       subtotalExento += baseImponible;
-      
+
       // Track 0% rate
       if (!tarifasMap.has(0)) {
         tarifasMap.set(0, { base: 0, impuesto: 0 });
       }
       tarifasMap.get(0)!.base += baseImponible;
     } else {
-      // Has IVA - calculate base from tax if needed
-      // Use BaseImponible from XML if available, otherwise calculate from tax
+      // Has IVA - use BaseImponible; if absent, derive the base from the tax.
       let baseCalculada = baseImponible;
       if (baseCalculada === 0 && montoImpuesto > 0 && tarifa > 0) {
         // Calculate base: base = impuesto / (tarifa / 100)
         baseCalculada = montoImpuesto / (tarifa / 100);
       }
-      
+
       subtotalGravado += baseCalculada;
       
       // Track by rate
