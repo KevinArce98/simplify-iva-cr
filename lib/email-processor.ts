@@ -19,20 +19,14 @@ async function getUserTaxIdById(userId: string): Promise<string | null> {
   }
 }
 
-/**
- * Represents an email attachment from Mailgun
- */
 export type MailgunAttachment = {
   filename: string;
   contentType: string;
   size: number;
   url?: string;
-  content?: string; // Direct content if available (preferred)
+  content?: string;
 };
 
-/**
- * Result of processing a single attachment
- */
 export type AttachmentProcessingResult = {
   filename: string;
   status: 'success' | 'skipped' | 'error';
@@ -41,9 +35,6 @@ export type AttachmentProcessingResult = {
   error?: string;
 };
 
-/**
- * Result of processing an entire email
- */
 export type EmailProcessingResult = {
   success: boolean;
   recipient: string;
@@ -57,27 +48,19 @@ export type EmailProcessingResult = {
   skippedDetails?: string;
 };
 
-/**
- * Extracts the main recipient email from Mailgun payload
- * Handles multiple recipients and extracts the first one
- */
 export function extractRecipientEmail(recipient: string | string[]): string {
   if (Array.isArray(recipient)) {
     return recipient[0];
   }
-  
-  // Extract email from "Name <email@domain.com>" format
+
   const match = recipient.match(/<(.+?)>/);
   if (match) {
     return match[1];
   }
-  
+
   return recipient;
 }
 
-/**
- * Finds user by email address
- */
 async function findUserByEmail(email: string): Promise<{ id: string; taxId: string | null } | null> {
   try {
     const normalizedEmail = normalizeEmail(email);
@@ -122,7 +105,7 @@ async function findUserByEmail(email: string): Promise<{ id: string; taxId: stri
     } catch (invoiceEmailLookupError) {
       console.warn('invoiceEmail column lookup is not available yet:', invoiceEmailLookupError);
     }
-    
+
     return user;
   } catch (error) {
     console.error(`Error finding user by email ${email}:`, error);
@@ -159,62 +142,49 @@ function classifyInvoiceType(parsedInvoice: ParsedXMLInvoice, userTaxId: string 
   return 'GASTO';
 }
 
-/**
- * Checks if attachment should be processed
- */
 function shouldProcessAttachment(filename: string, contentType: string): {
   process: boolean;
   reason?: string;
 } {
-  // Only accept XML files
   if (!filename.toLowerCase().endsWith('.xml')) {
     return { process: false, reason: 'Not an XML file' };
   }
-  
-  // Ignore PDF files (should not reach here, but defensive check)
+
   if (contentType.includes('pdf')) {
     return { process: false, reason: 'PDF files are not supported' };
   }
-  
+
   return { process: true };
 }
 
-/**
- * Downloads attachment content from Mailgun storage URL or returns direct content
- */
 async function getAttachmentContent(attachment: MailgunAttachment): Promise<string> {
-  // If content is already available, return it directly
   if (attachment.content) {
     return attachment.content;
   }
-  
-  // Otherwise download from URL
+
   if (!attachment.url) {
     throw new Error('No content or URL provided for attachment');
   }
-  
+
   const apiKey = process.env.MAILGUN_API_KEY;
-  
+
   if (!apiKey) {
     throw new Error('MAILGUN_API_KEY not configured');
   }
-  
+
   const response = await fetch(attachment.url, {
     headers: {
       'Authorization': `Basic ${Buffer.from(`api:${apiKey}`).toString('base64')}`,
     },
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to download attachment: ${response.status} ${response.statusText}`);
   }
-  
+
   return await response.text();
 }
 
-/**
- * Checks if invoice already exists by user and clave
- */
 async function isInvoiceDuplicate(userId: string, clave: string): Promise<boolean> {
   try {
     const existing = await prisma.invoice.findFirst({
@@ -224,7 +194,7 @@ async function isInvoiceDuplicate(userId: string, clave: string): Promise<boolea
       },
       select: { id: true },
     });
-    
+
     return !!existing;
   } catch (error) {
     console.error(`Error checking duplicate for user ${userId} and clave ${clave}:`, error);
@@ -232,9 +202,6 @@ async function isInvoiceDuplicate(userId: string, clave: string): Promise<boolea
   }
 }
 
-/**
- * Processes a single XML attachment
- */
 async function processXMLAttachment(
   userId: string,
   userTaxId: string | null | undefined,
@@ -242,10 +209,8 @@ async function processXMLAttachment(
   xmlContent: string
 ): Promise<AttachmentProcessingResult> {
   try {
-    // Check document type
     const docType = getDocumentType(xmlContent);
 
-    // Process facturas and notas de crédito/débito (notas adjust a prior invoice)
     const supportedTypes = [
       'FacturaElectronica',
       'NotaCreditoElectronica',
@@ -264,11 +229,9 @@ async function processXMLAttachment(
         reason,
       };
     }
-    
-    // Parse invoice XML
+
     const parsedInvoice = await parseInvoiceXML(xmlContent);
-    
-    // Check for duplicate by clave within the same user
+
     if (parsedInvoice.clave) {
       const isDuplicate = await isInvoiceDuplicate(userId, parsedInvoice.clave);
       if (isDuplicate) {
@@ -279,16 +242,13 @@ async function processXMLAttachment(
         };
       }
     }
-    
+
     const invoiceDate = new Date(parsedInvoice.fecha);
     const exchangeRate = parsedInvoice.tipoCambio;
     const tipo = classifyInvoiceType(parsedInvoice, userTaxId);
 
-    // TotalImpuesto from ResumenFactura is Hacienda's authoritative net tax
-    // (already discounting any exoneration), so we use it directly.
     const totalImpuesto = parsedInvoice.totalImpuesto;
 
-    // Create invoice in database
     const invoice = await prisma.invoice.create({
       data: {
         userId,
@@ -307,32 +267,28 @@ async function processXMLAttachment(
         receptorIdentificacionEncrypted: encryptNullableString(
           parsedInvoice.receptor?.identificacion
         ),
-        
-        // Document classification
+
         documentType: parsedInvoice.documentType,
         signo: parsedInvoice.signo,
 
-        // Base amounts for Hacienda declaration
         subtotalGravadoEncrypted: encryptNullableNumber(parsedInvoice.subtotalGravado),
         subtotalExentoEncrypted: encryptNullableNumber(parsedInvoice.subtotalExento),
         subtotalExoneradoEncrypted: encryptNullableNumber(parsedInvoice.subtotalExonerado),
         subtotalNoSujetoEncrypted: encryptNullableNumber(parsedInvoice.subtotalNoSujeto),
         tarifaIVA: parsedInvoice.tarifaIVA,
 
-        // Totals used by reports
         totalImpuestoEncrypted: encryptNullableNumber(totalImpuesto),
         totalComprobanteEncrypted: encryptNullableNumber(
           parsedInvoice.totalComprobante
         ),
-        
-        // Currency and exchange rate
+
         tipoMoneda: parsedInvoice.moneda,
         tipoCambio: exchangeRate,
       } as any,
     });
-    
+
     console.log(`✓ Created invoice ${invoice.id} for user ${userId} from ${filename}`);
-    
+
     return {
       filename,
       status: 'success',
@@ -348,20 +304,15 @@ async function processXMLAttachment(
   }
 }
 
-/**
- * Processes all attachments from an inbound email
- */
 export async function processInboundEmail(
   recipient: string,
   attachments: MailgunAttachment[]
 ): Promise<EmailProcessingResult> {
   try {
-    // Extract and validate recipient email
     const recipientEmail = extractRecipientEmail(recipient);
-    
-    // Find user by email
+
     const user = await findUserByEmail(recipientEmail);
-    
+
     if (!user) {
       return {
         success: false,
@@ -374,20 +325,18 @@ export async function processInboundEmail(
         error: `No user found with email: ${recipientEmail}`,
       };
     }
-    
+
     const results: AttachmentProcessingResult[] = [];
     let processedCount = 0;
     let skippedCount = 0;
     let failedCount = 0;
-    
-    // Process each attachment
+
     for (const attachment of attachments) {
-      // Check if attachment should be processed
       const { process, reason } = shouldProcessAttachment(
         attachment.filename,
         attachment.contentType
       );
-      
+
       if (!process) {
         results.push({
           filename: attachment.filename,
@@ -397,21 +346,19 @@ export async function processInboundEmail(
         skippedCount++;
         continue;
       }
-      
+
       try {
-        // Get attachment content
         const xmlContent = await getAttachmentContent(attachment);
-        
-        // Process XML
+
         const result = await processXMLAttachment(
           user.id,
           user.taxId,
           attachment.filename,
           xmlContent
         );
-        
+
         results.push(result);
-        
+
         if (result.status === 'success') {
           processedCount++;
         } else if (result.status === 'skipped') {
@@ -429,8 +376,7 @@ export async function processInboundEmail(
         failedCount++;
       }
     }
-    
-    // Success only if at least one invoice was processed and none failed
+
     const emailSucceeded = processedCount > 0 && failedCount === 0;
 
     const failedResults = results.filter((result) => result.status === 'error');

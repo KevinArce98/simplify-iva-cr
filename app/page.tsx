@@ -20,8 +20,6 @@ export default async function HomePage({
   if (!session) {
     redirect('/login');
   }
-
-  // Default to current month or use search params
   const params = await searchParams;
   const now = new Date();
   const parsedMonth = params.mes ? Number.parseInt(params.mes, 10) : NaN;
@@ -61,9 +59,7 @@ export default async function HomePage({
   const invoiceEmail = user?.invoiceEmail || null;
 
   return (
-    <AppShell>
-            {/* Page Heading */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <AppShell>            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="flex flex-col gap-1">
                 <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">
                   Panel de Control
@@ -77,11 +73,7 @@ export default async function HomePage({
                 <HomePeriodSelector currentMonth={currentMonth} currentYear={currentYear} />
               </div>
             </div>
-
-            {/* Action Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Upload Expenses */}
-              <Link
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">              <Link
                 href="/upload?type=gasto"
                 className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-(--primary)/50 transition-all duration-300"
               >
@@ -116,8 +108,6 @@ export default async function HomePage({
                   </div>
                 </div>
               </Link>
-
-              {/* Upload Invoices */}
               <Link
                 href="/upload?type=emitida"
                 className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-white p-6 shadow-sm border border-[#e5e7eb] hover:border-(--primary)/50 transition-all duration-300"
@@ -159,8 +149,6 @@ export default async function HomePage({
             {invoiceEmail && (
               <InvoiceEmailBox invoiceEmail={invoiceEmail} recentEmailLogs={emailLogs} />
             )}
-
-            {/* Summary Section */}
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-[#0e121b] text-xl font-bold leading-tight">
@@ -170,8 +158,6 @@ export default async function HomePage({
                   {summary.ivaPagarConSaldo > 0 ? 'Pendiente' : 'Saldo a Favor'}
                 </span>
               </div>
-
-              {/* Saldo a Favor Anterior si existe */}
               {summary.saldoAFavorAnterior > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
                   <span
@@ -192,9 +178,7 @@ export default async function HomePage({
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Debit */}
-                <div className="bg-white p-5 rounded-xl border border-[#d0d7e7] shadow-sm flex flex-col gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">                <div className="bg-white p-5 rounded-xl border border-[#d0d7e7] shadow-sm flex flex-col gap-2">
                   <div className="flex justify-between items-start">
                     <p className="text-[#4d6599] text-sm font-medium">
                       IVA Débito (Ventas)
@@ -218,8 +202,6 @@ export default async function HomePage({
                     ></div>
                   </div>
                 </div>
-
-                {/* Credit */}
                 <div className="bg-white p-5 rounded-xl border border-[#d0d7e7] shadow-sm flex flex-col gap-2">
                   <div className="flex justify-between items-start">
                     <p className="text-[#4d6599] text-sm font-medium">
@@ -244,8 +226,6 @@ export default async function HomePage({
                     ></div>
                   </div>
                 </div>
-
-                {/* Total */}
                 <div className="bg-(--primary) p-5 rounded-xl border border-(--primary) shadow-sm flex flex-col gap-2 relative overflow-hidden">
                   <div className="absolute right-0 top-0 p-4 opacity-10">
                     <span
@@ -303,8 +283,6 @@ export default async function HomePage({
                 </div>
               </div>
             </div>
-
-            {/* Activity */}
             <div className="flex flex-col gap-4">
               <h3 className="text-[#0e121b] text-xl font-bold leading-tight">
                 Actividad Reciente

@@ -13,30 +13,30 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "fast-xml-parser": "^5.7.2",
-    "next": "16.2.4",
-    "next-auth": "4.24.14",
-    "pg": "^8.20.0",
-    "react": "19.2.5",
-    "react-dom": "19.2.5"
+    "fast-xml-parser": "^5.11.0",
+    "next": "16.3.1",
+    "next-auth": "4.24.15",
+    "pg": "^8.23.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.4",
-    "@types/node": "^25.6.0",
-    "@types/pg": "^8.20.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "eslint": "^10.3.0",
-    "eslint-config-next": "16.2.4",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^25.9.5",
+    "@types/pg": "^8.21.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "eslint": "^10.8.1",
+    "eslint-config-next": "16.3.1",
     "eslint-config-prettier": "^10.1.8",
-    "prisma": "^7.8.0",
-    "tailwindcss": "^4.2.4",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "prisma": "^7.9.1",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
   }
 }

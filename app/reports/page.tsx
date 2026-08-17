@@ -49,9 +49,7 @@ export default async function ReportsPage({
       : 0;
 
   return (
-    <AppShell>
-            {/* Due Date Alert */}
-            {summary.estaProximoVencimiento && !summary.estaVencido && (
+    <AppShell>            {summary.estaProximoVencimiento && !summary.estaVencido && (
               <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg shadow-sm">
                 <div className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-amber-600 text-[24px]">
@@ -97,8 +95,6 @@ export default async function ReportsPage({
                 </div>
               </div>
             )}
-
-            {/* Page Heading */}
             <div className="flex flex-wrap justify-between items-end gap-4 border-b border-gray-200 pb-6">
               <div className="flex flex-col gap-2">
                 <h2 className="text-[#0e121b] tracking-tight text-2xl md:text-[32px] font-bold leading-tight">
@@ -143,11 +139,7 @@ export default async function ReportsPage({
                 </Suspense>
               </div>
             </div>
-
-            {/* Stats Cards - Top Row: Subtotales para Hacienda */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Ventas Gravadas (Base) */}
-              <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">              <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
                 <div className="flex items-center gap-2 text-[#4d6599]">
                   <span className="material-symbols-outlined text-(--primary) text-lg">
                     storefront
@@ -161,8 +153,6 @@ export default async function ReportsPage({
                 </p>
                 <p className="text-xs text-[#4d6599]">Subtotal sujeto a IVA</p>
               </div>
-
-              {/* Ventas Exentas */}
               <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
                 <div className="flex items-center gap-2 text-[#4d6599]">
                   <span className="material-symbols-outlined text-amber-500 text-lg">
@@ -181,8 +171,6 @@ export default async function ReportsPage({
                 </p>
                 <p className="text-xs text-[#4d6599]">Exentas, exoneradas y no sujetas</p>
               </div>
-
-              {/* Compras Gravadas (Base) */}
               <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
                 <div className="flex items-center gap-2 text-[#4d6599]">
                   <span className="material-symbols-outlined text-emerald-500 text-lg">
@@ -197,8 +185,6 @@ export default async function ReportsPage({
                 </p>
                 <p className="text-xs text-[#4d6599]">Subtotal sujeto a IVA</p>
               </div>
-
-              {/* Compras Exentas */}
               <div className="flex flex-col gap-2 rounded-xl p-5 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
                 <div className="flex items-center gap-2 text-[#4d6599]">
                   <span className="material-symbols-outlined text-purple-500 text-lg">
@@ -218,11 +204,7 @@ export default async function ReportsPage({
                 <p className="text-xs text-[#4d6599]">Exentas, exoneradas y no sujetas</p>
               </div>
             </div>
-
-            {/* Stats Cards - Bottom Row: IVA */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Débito */}
-              <div className="flex flex-col gap-3 rounded-xl p-6 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">              <div className="flex flex-col gap-3 rounded-xl p-6 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <span className="material-symbols-outlined text-6xl text-(--primary)">
                     trending_up
@@ -246,8 +228,6 @@ export default async function ReportsPage({
                   ></div>
                 </div>
               </div>
-
-              {/* Crédito */}
               <div className="flex flex-col gap-3 rounded-xl p-6 bg-white shadow-sm border border-gray-100 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <span className="material-symbols-outlined text-6xl text-emerald-500">
@@ -272,8 +252,6 @@ export default async function ReportsPage({
                   ></div>
                 </div>
               </div>
-
-              {/* Total */}
               <div className="flex flex-col gap-3 rounded-xl p-6 bg-linear-to-br from-(--primary)/10 to-white shadow-md border border-(--primary)/20 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                   <span className="material-symbols-outlined text-6xl text-(--primary)">
@@ -309,8 +287,6 @@ export default async function ReportsPage({
                 </p>
               </div>
             </div>
-
-            {/* Table */}
             <InvoicesTable
               invoices={invoices}
               summary={{

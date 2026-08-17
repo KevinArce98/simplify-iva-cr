@@ -20,8 +20,6 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    // Validation
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
@@ -39,9 +37,7 @@ export default function RegisterPage() {
 
       if (result.error) {
         setError(result.error);
-      } else {
-        // Auto login after registration
-        const signInResult = await signIn('credentials', {
+      } else {        const signInResult = await signIn('credentials', {
           email,
           password,
           redirect: false,
@@ -64,9 +60,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Logo/Header */}
-          <div className="text-center mb-8">
+        <div className="bg-white rounded-2xl shadow-xl p-8">          <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-(--primary) rounded-2xl mb-4">
               <span className="material-symbols-outlined text-white text-3xl">
                 calculate
@@ -77,8 +71,6 @@ export default function RegisterPage() {
               Registra tu cuenta para comenzar
             </p>
           </div>
-
-          {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <span className="material-symbols-outlined text-red-600 text-xl">
@@ -87,8 +79,6 @@ export default function RegisterPage() {
               <p className="text-sm text-red-800 flex-1">{error}</p>
             </div>
           )}
-
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label
@@ -189,8 +179,6 @@ export default function RegisterPage() {
               )}
             </button>
           </form>
-
-          {/* Login Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-[#4d6599]">
               ¿Ya tienes una cuenta?{' '}
@@ -203,8 +191,6 @@ export default function RegisterPage() {
             </p>
           </div>
         </div>
-
-        {/* Footer */}
         <p className="text-center text-sm text-[#4d6599] mt-6">
           Sistema de cálculo de IVA para Costa Rica
         </p>
